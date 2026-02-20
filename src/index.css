@@ -218,17 +218,75 @@ body {
 
 /* Gradient shift animation */
 @keyframes gradientShift {
-  0%, 100% {
+  0% {
     background-position: 0% 50%;
+  }
+  25% {
+    background-position: 50% 100%;
   }
   50% {
     background-position: 100% 50%;
+  }
+  75% {
+    background-position: 50% 0%;
+  }
+  100% {
+    background-position: 0% 50%;
   }
 }
 
 .animate-gradient {
   background-size: 200% 200%;
-  animation: gradientShift 6s ease infinite;
+  animation: gradientShift 4s ease infinite;
+}
+
+/* Text glow animation for hero */
+@keyframes textGlow {
+  0%, 100% {
+    text-shadow: 0 0 20px rgba(59, 130, 246, 0.5), 0 0 40px rgba(99, 102, 241, 0.3), 0 0 60px rgba(139, 92, 246, 0.2);
+  }
+  50% {
+    text-shadow: 0 0 30px rgba(59, 130, 246, 0.7), 0 0 60px rgba(99, 102, 241, 0.5), 0 0 90px rgba(139, 92, 246, 0.3);
+  }
+}
+
+.animate-text-glow {
+  animation: textGlow 3s ease-in-out infinite;
+}
+
+/* Floating animation for background orbs */
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0) scale(1);
+  }
+  50% {
+    transform: translateY(-20px) scale(1.05);
+  }
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+/* Shimmer effect for title */
+@keyframes shimmer {
+  0% {
+    background-position: -200% center;
+  }
+  100% {
+    background-position: 200% center;
+  }
+}
+
+.animate-shimmer {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.1) 50%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 3s linear infinite;
 }
 
 /* Glass morphism effect */
@@ -407,3 +465,5 @@ input[type="radio"] {
     height: 16px;
   }
 }
+
+/* Hamburger button in header */

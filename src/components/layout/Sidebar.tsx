@@ -4,7 +4,6 @@ import {
   PenTool, 
   Image, 
   Youtube,
-  Menu,
   X
 } from 'lucide-react';
 import { cn } from '@/utils/cn';
@@ -14,7 +13,6 @@ interface SidebarProps {
   onCategoryChange: (category: string) => void;
   isOpen: boolean;
   onToggle: () => void;
-  hideToggle?: boolean;
 }
 
 const categories = [
@@ -25,7 +23,7 @@ const categories = [
   { id: 'social', label: 'Social Media', icon: Youtube },
 ];
 
-export function Sidebar({ activeCategory, onCategoryChange, isOpen, onToggle, hideToggle }: SidebarProps) {
+export function Sidebar({ activeCategory, onCategoryChange, isOpen, onToggle }: SidebarProps) {
   const handleCategoryClick = (catId: string) => {
     onCategoryChange(catId);
     // Always close on mobile
@@ -44,32 +42,32 @@ export function Sidebar({ activeCategory, onCategoryChange, isOpen, onToggle, hi
         />
       )}
       
-      {/* Mobile toggle button - hidden when inside a tool */}
-      {!hideToggle && (
-        <button
-          onClick={onToggle}
-          className="fixed top-3 left-3 z-50 lg:hidden p-2 bg-slate-800 hover:bg-slate-700 rounded-lg text-white shadow-lg transition-colors"
-          aria-label="Toggle menu"
-        >
-          {isOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-        </button>
-      )}
-      
       {/* Sidebar */}
       <aside className={cn(
         'fixed left-0 top-0 h-full w-64 bg-gradient-to-b from-slate-900 to-slate-950 border-r border-slate-800 z-50 transform transition-transform duration-300 ease-out lg:translate-x-0',
         isOpen ? 'translate-x-0' : '-translate-x-full'
       )}>
-        {/* Logo */}
+        {/* Logo with Close Button */}
         <div className="p-4 sm:p-6 border-b border-slate-800">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 sm:w-10 sm:h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/25">
-              <span className="text-white font-bold text-base sm:text-lg">C</span>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 sm:w-10 sm:h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/25">
+                <span className="text-white font-bold text-base sm:text-lg">C</span>
+              </div>
+              <div>
+                <h1 className="text-white font-bold text-base sm:text-lg">Cutverse AI</h1>
+                <p className="text-slate-500 text-[10px] sm:text-xs">AI Tools Platform</p>
+              </div>
             </div>
-            <div>
-              <h1 className="text-white font-bold text-base sm:text-lg">Cutverse AI</h1>
-              <p className="text-slate-500 text-[10px] sm:text-xs">AI Tools Platform</p>
-            </div>
+            
+            {/* Close button - visible on mobile when sidebar is open */}
+            <button
+              onClick={onToggle}
+              className="lg:hidden p-2 bg-slate-800 hover:bg-red-500/20 hover:text-red-400 rounded-lg text-slate-400 transition-all duration-200 active:scale-95"
+              aria-label="Close menu"
+            >
+              <X className="w-5 h-5" />
+            </button>
           </div>
         </div>
         

@@ -72,7 +72,6 @@ export function App() {
         }}
         isOpen={sidebarOpen}
         onToggle={() => setSidebarOpen(!sidebarOpen)}
-        hideToggle={!!activeTool}
       />
       
       <main className="lg:ml-64 min-h-screen flex flex-col">
@@ -83,6 +82,7 @@ export function App() {
           searchQuery={searchQuery}
           onSearchChange={setSearchQuery}
           onToolSelect={handleToolClick}
+          onMenuToggle={() => setSidebarOpen(!sidebarOpen)}
         />
         
         <div className="flex-1 p-3 sm:p-4 md:p-6">
@@ -97,40 +97,53 @@ export function App() {
             <>
               {/* Hero Section - Only show on All Tools */}
               {activeCategory === 'all' && !searchQuery && (
-                <div className="mb-8 sm:mb-10 py-10 sm:py-14 md:py-20 px-4 sm:px-6 md:px-8 bg-gradient-to-br from-slate-900 via-blue-950/50 to-slate-900 border border-blue-500/10 rounded-2xl sm:rounded-3xl relative overflow-hidden">
-                  {/* Background glow effects */}
-                  <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-blue-500/10 rounded-full blur-3xl pointer-events-none" />
-                  <div className="absolute top-1/2 left-1/4 -translate-y-1/2 w-[300px] h-[300px] bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
-                  <div className="absolute top-1/2 right-1/4 -translate-y-1/2 w-[300px] h-[300px] bg-purple-500/10 rounded-full blur-3xl pointer-events-none" />
+                <div className="mb-8 sm:mb-10 py-12 sm:py-16 md:py-24 px-4 sm:px-6 md:px-8 bg-gradient-to-br from-slate-900 via-blue-950/50 to-slate-900 border border-blue-500/20 rounded-2xl sm:rounded-3xl relative overflow-hidden">
+                  {/* Animated background glow effects */}
+                  <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-blue-500/20 rounded-full blur-[100px] pointer-events-none animate-pulse" />
+                  <div className="absolute top-1/3 left-1/4 w-[400px] h-[400px] bg-indigo-500/20 rounded-full blur-[80px] pointer-events-none animate-pulse" style={{ animationDelay: '0.5s' }} />
+                  <div className="absolute bottom-1/3 right-1/4 w-[400px] h-[400px] bg-purple-500/20 rounded-full blur-[80px] pointer-events-none animate-pulse" style={{ animationDelay: '1s' }} />
+                  <div className="absolute top-0 left-0 right-0 bottom-0 bg-gradient-to-t from-slate-900/80 to-transparent pointer-events-none" />
                   
                   <div className="relative z-10 text-center">
-                    {/* Big Gradient Cutverse AI Title */}
-                    <h1 className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-black mb-4 sm:mb-6 bg-gradient-to-r from-blue-400 via-indigo-500 to-purple-500 bg-clip-text text-transparent animate-gradient" style={{ backgroundSize: '200% 200%' }}>
-                      Cutverse AI
-                    </h1>
+                    {/* Big Gradient Cutverse AI Title with glow */}
+                    <div className="relative inline-block">
+                      {/* Glow behind text */}
+                      <div className="absolute inset-0 blur-3xl bg-gradient-to-r from-blue-500/50 via-indigo-500/50 to-purple-500/50 scale-150 animate-pulse" />
+                      
+                      <h1 className="relative text-6xl sm:text-7xl md:text-8xl lg:text-9xl font-black mb-2 tracking-tight">
+                        <span className="bg-gradient-to-r from-blue-400 via-cyan-400 to-blue-500 bg-clip-text text-transparent drop-shadow-2xl animate-gradient" style={{ backgroundSize: '200% 200%' }}>
+                          Cutverse
+                        </span>
+                        <span className="bg-gradient-to-r from-indigo-400 via-purple-500 to-pink-500 bg-clip-text text-transparent drop-shadow-2xl animate-gradient ml-2 sm:ml-4" style={{ backgroundSize: '200% 200%', animationDelay: '0.5s' }}>
+                          AI
+                        </span>
+                      </h1>
+                    </div>
                     
-                    <p className="text-slate-400 text-sm sm:text-base md:text-lg max-w-xl mx-auto mb-6 sm:mb-8">
+                    {/* Tagline with subtle animation */}
+                    <p className="text-slate-300 text-base sm:text-lg md:text-xl max-w-2xl mx-auto mb-8 sm:mb-10 font-medium">
                       Professional AI tools for everyone
                     </p>
                     
-                    <div className="flex flex-wrap justify-center gap-4 sm:gap-6 md:gap-8">
-                      <div className="flex items-center gap-2 text-slate-300">
-                        <div className="w-8 h-8 sm:w-10 sm:h-10 bg-blue-500/20 rounded-xl flex items-center justify-center">
-                          <Zap className="w-4 h-4 sm:w-5 sm:h-5 text-blue-400" />
+                    {/* Feature badges */}
+                    <div className="flex flex-wrap justify-center gap-3 sm:gap-4 md:gap-6">
+                      <div className="flex items-center gap-2 px-4 py-2 bg-blue-500/10 border border-blue-500/20 rounded-full">
+                        <div className="w-8 h-8 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full flex items-center justify-center shadow-lg shadow-blue-500/30">
+                          <Zap className="w-4 h-4 text-white" />
                         </div>
-                        <span className="text-xs sm:text-sm font-medium">Lightning Fast</span>
+                        <span className="text-sm sm:text-base font-semibold text-white">Lightning Fast</span>
                       </div>
-                      <div className="flex items-center gap-2 text-slate-300">
-                        <div className="w-8 h-8 sm:w-10 sm:h-10 bg-green-500/20 rounded-xl flex items-center justify-center">
-                          <Shield className="w-4 h-4 sm:w-5 sm:h-5 text-green-400" />
+                      <div className="flex items-center gap-2 px-4 py-2 bg-green-500/10 border border-green-500/20 rounded-full">
+                        <div className="w-8 h-8 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center shadow-lg shadow-green-500/30">
+                          <Shield className="w-4 h-4 text-white" />
                         </div>
-                        <span className="text-xs sm:text-sm font-medium">Privacy First</span>
+                        <span className="text-sm sm:text-base font-semibold text-white">Privacy First</span>
                       </div>
-                      <div className="flex items-center gap-2 text-slate-300">
-                        <div className="w-8 h-8 sm:w-10 sm:h-10 bg-purple-500/20 rounded-xl flex items-center justify-center">
-                          <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 text-purple-400" />
+                      <div className="flex items-center gap-2 px-4 py-2 bg-purple-500/10 border border-purple-500/20 rounded-full">
+                        <div className="w-8 h-8 bg-gradient-to-br from-purple-400 to-purple-600 rounded-full flex items-center justify-center shadow-lg shadow-purple-500/30">
+                          <Sparkles className="w-4 h-4 text-white" />
                         </div>
-                        <span className="text-xs sm:text-sm font-medium">Top Quality AI</span>
+                        <span className="text-sm sm:text-base font-semibold text-white">Top Quality AI</span>
                       </div>
                     </div>
                   </div>

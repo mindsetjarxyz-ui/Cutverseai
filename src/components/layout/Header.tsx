@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
-import { Search, ArrowLeft, X } from 'lucide-react';
+import { Search, ArrowLeft, X, Menu } from 'lucide-react';
 import { tools, Tool } from '@/data/tools';
 import { cn } from '@/utils/cn';
 
@@ -10,9 +10,8 @@ interface HeaderProps {
   searchQuery: string;
   onSearchChange: (query: string) => void;
   onToolSelect?: (tool: Tool) => void;
+  onMenuToggle?: () => void;
 }
-
-// Category colors kept for potential future use
 
 const categoryLabels: Record<string, string> = {
   student: 'Student AI',
@@ -21,7 +20,7 @@ const categoryLabels: Record<string, string> = {
   social: 'Social Media',
 };
 
-export function Header({ title, showBack, onBack, searchQuery, onSearchChange, onToolSelect }: HeaderProps) {
+export function Header({ title, showBack, onBack, searchQuery, onSearchChange, onToolSelect, onMenuToggle }: HeaderProps) {
   const [isFocused, setIsFocused] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -75,7 +74,7 @@ export function Header({ title, showBack, onBack, searchQuery, onSearchChange, o
     <header className="sticky top-0 z-30 bg-slate-900/95 backdrop-blur-xl border-b border-slate-800">
       <div className="px-3 sm:px-4 md:px-6 py-3 sm:py-4">
         <div className="flex items-center gap-2 sm:gap-4">
-          {/* Back Button - Always visible and prominent */}
+          {/* Back Button - Only visible when inside a tool */}
           {showBack && (
             <button
               onClick={onBack}
@@ -86,11 +85,19 @@ export function Header({ title, showBack, onBack, searchQuery, onSearchChange, o
             </button>
           )}
           
+          {/* Hamburger Menu Button - Only visible on mobile and when NOT inside a tool */}
+          {!showBack && onMenuToggle && (
+            <button
+              onClick={onMenuToggle}
+              className="lg:hidden flex items-center justify-center w-10 h-10 text-white bg-gradient-to-br from-blue-600 to-indigo-700 hover:from-blue-500 hover:to-indigo-600 rounded-xl transition-all duration-200 flex-shrink-0 shadow-lg shadow-blue-500/20 active:scale-95"
+              aria-label="Open menu"
+            >
+              <Menu className="w-5 h-5" />
+            </button>
+          )}
+          
           {/* Title */}
-          <h1 className={cn(
-            "text-base sm:text-lg md:text-xl font-semibold text-white truncate flex-1 min-w-0",
-            !showBack && "ml-10 lg:ml-0"
-          )}>
+          <h1 className="text-base sm:text-lg md:text-xl font-semibold text-white truncate flex-1 min-w-0">
             {title}
           </h1>
           
