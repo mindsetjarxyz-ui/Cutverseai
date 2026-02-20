@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { 
   LayoutGrid, 
   GraduationCap, 
@@ -24,6 +25,26 @@ const categories = [
 ];
 
 export function Sidebar({ activeCategory, onCategoryChange, isOpen, onToggle }: SidebarProps) {
+  // Lock body scroll when sidebar is open on mobile
+  useEffect(() => {
+    if (isOpen && window.innerWidth < 1024) {
+      document.body.style.overflow = 'hidden';
+      document.body.style.touchAction = 'none';
+      document.documentElement.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+      document.body.style.touchAction = '';
+      document.documentElement.style.overflow = '';
+    }
+    
+    // Cleanup on unmount
+    return () => {
+      document.body.style.overflow = '';
+      document.body.style.touchAction = '';
+      document.documentElement.style.overflow = '';
+    };
+  }, [isOpen]);
+
   const handleCategoryClick = (catId: string) => {
     onCategoryChange(catId);
     // Always close on mobile
@@ -34,11 +55,13 @@ export function Sidebar({ activeCategory, onCategoryChange, isOpen, onToggle }: 
 
   return (
     <>
-      {/* Mobile overlay */}
+      {/* Mobile overlay - prevents scrolling background */}
       {isOpen && (
         <div 
           className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 lg:hidden"
           onClick={onToggle}
+          onTouchMove={(e) => e.preventDefault()}
+          style={{ touchAction: 'none' }}
         />
       )}
       

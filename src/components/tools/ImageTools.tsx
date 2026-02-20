@@ -8,32 +8,8 @@ interface ImageToolProps {
   toolId: string;
 }
 
-const styleOptions = [
-  { value: '', label: 'None' },
-  { value: 'realistic photo', label: 'Realistic' },
-  { value: 'anime style', label: 'Anime' },
-  { value: 'digital art', label: 'Digital Art' },
-  { value: 'watercolor painting', label: 'Watercolor' },
-  { value: 'oil painting', label: 'Oil Painting' },
-  { value: 'pencil sketch', label: 'Sketch' },
-  { value: '3d render', label: '3D Render' },
-  { value: 'cinematic lighting', label: 'Cinematic' },
-  { value: 'fantasy art', label: 'Fantasy' },
-  { value: 'minimalist', label: 'Minimalist' },
-];
-
-const aspectRatios = [
-  { value: '1:1', label: 'Square (1:1)' },
-  { value: '3:4', label: 'Portrait (3:4)' },
-  { value: '4:3', label: 'Landscape (4:3)' },
-  { value: '9:16', label: 'Story (9:16)' },
-  { value: '16:9', label: 'Widescreen (16:9)' },
-];
-
 export function ImageGenerator() {
   const [prompt, setPrompt] = useState('');
-  const [style, setStyle] = useState('');
-  const [aspectRatio, setAspectRatio] = useState('1:1');
   const [result, setResult] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -44,22 +20,8 @@ export function ImageGenerator() {
     setError('');
     setResult('');
     
-    // Build the full prompt with style and quality enhancers
-    let fullPrompt = prompt.trim();
-    
-    if (style) {
-      fullPrompt = `${fullPrompt}, ${style}`;
-    }
-    
-    // Add quality enhancers
-    fullPrompt = `${fullPrompt}, high quality, detailed, 4k`;
-    
-    // Add aspect ratio hint
-    if (aspectRatio === '3:4' || aspectRatio === '9:16') {
-      fullPrompt = `${fullPrompt}, portrait orientation`;
-    } else if (aspectRatio === '4:3' || aspectRatio === '16:9') {
-      fullPrompt = `${fullPrompt}, landscape orientation`;
-    }
+    // Build the full prompt with quality enhancers
+    const fullPrompt = `${prompt.trim()}, high quality, detailed, 4k`;
     
     const { error: apiError, output } = await generateImage(fullPrompt);
     
@@ -90,49 +52,11 @@ export function ImageGenerator() {
       <div className="space-y-5">
         <TextArea
           label="Image Description"
-          placeholder="Describe the image you want, for example: a futuristic city at sunset with flying cars and neon lights, a cute cat wearing a wizard hat, a beautiful mountain landscape..."
+          placeholder="Describe the image you want, for example: a futuristic city at sunset with flying cars and neon lights, a cute cat wearing a wizard hat, a beautiful mountain landscape, anime girl with blue hair..."
           value={prompt}
           onChange={(e) => setPrompt(e.target.value)}
-          rows={4}
+          rows={5}
         />
-        
-        <div>
-          <label className="block text-sm font-medium text-slate-300 mb-2">Style (Optional)</label>
-          <div className="flex flex-wrap gap-2">
-            {styleOptions.map(opt => (
-              <button
-                key={opt.value}
-                onClick={() => setStyle(opt.value)}
-                className={`px-3 py-1.5 rounded-lg text-sm transition-colors ${
-                  style === opt.value 
-                    ? 'bg-blue-600 text-white' 
-                    : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
-                }`}
-              >
-                {opt.label}
-              </button>
-            ))}
-          </div>
-        </div>
-        
-        <div>
-          <label className="block text-sm font-medium text-slate-300 mb-2">Aspect Ratio</label>
-          <div className="flex flex-wrap gap-2">
-            {aspectRatios.map(opt => (
-              <button
-                key={opt.value}
-                onClick={() => setAspectRatio(opt.value)}
-                className={`px-3 py-1.5 rounded-lg text-sm transition-colors ${
-                  aspectRatio === opt.value 
-                    ? 'bg-blue-600 text-white' 
-                    : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
-                }`}
-              >
-                {opt.label}
-              </button>
-            ))}
-          </div>
-        </div>
         
         <div className="flex flex-wrap gap-3">
           <Button onClick={handleGenerate} loading={loading} disabled={!prompt.trim()}>
