@@ -39,6 +39,7 @@ const languageOptions = [
   { value: 'arabic', label: 'Arabic' },
 ];
 
+// ==================== YOUTUBE TITLE GENERATOR ====================
 export function YouTubeTitleGenerator() {
   const [topic, setTopic] = useState('');
   const [style, setStyle] = useState('clickbait');
@@ -55,15 +56,11 @@ export function YouTubeTitleGenerator() {
     
     const styleText = titleStyleOptions.find(o => o.value === style)?.label || style;
     
-    const prompt = `Generate 6 ${styleText} YouTube video titles for: "${topic}"
+    const prompt = `Generate exactly 6 ${styleText} YouTube video titles for this topic: "${topic}"
 
-Requirements:
-- Make them attention-grabbing and click-worthy
-- Each title should be unique and different
-- Keep them under 60 characters ideally
-- Do NOT use asterisks or single quotes
-- Make them optimized for YouTube search
-- Return ONLY the 6 titles, one per line, numbered 1-6`;
+Make them attention-grabbing, click-worthy, and optimized for YouTube search. Each title should be unique, different in structure, and under 70 characters.
+
+Return ONLY the 6 titles, one per line, numbered 1 through 6. No extra text or explanations.`;
 
     const { error: apiError, output } = await generateText(prompt);
     
@@ -71,8 +68,8 @@ Requirements:
       setError(apiError);
     } else {
       const lines = output.split('\n')
-        .map(line => line.replace(/^\\d+[\\.\\)]\\s*/, '').trim())
-        .filter(line => line.length > 0 && !line.toLowerCase().includes('here are'));
+        .map(line => line.replace(/^\d+[\.\)\-\:]\s*/, '').trim())
+        .filter(line => line.length > 5 && !line.toLowerCase().includes('here are') && !line.toLowerCase().includes('sure'));
       setTitles(lines.slice(0, 6));
     }
     setLoading(false);
@@ -133,12 +130,13 @@ Requirements:
               {titles.map((title, index) => (
                 <div 
                   key={index}
-                  className="flex items-center gap-3 p-3 bg-slate-700/30 rounded-lg group"
+                  className="flex items-center gap-3 p-3 bg-slate-700/30 rounded-lg group hover:bg-slate-700/50 transition-colors"
                 >
-                  <span className="text-slate-200 flex-1">{title}</span>
+                  <span className="w-6 h-6 flex-shrink-0 bg-blue-600/20 rounded-full flex items-center justify-center text-xs text-blue-400 font-medium">{index + 1}</span>
+                  <span className="text-slate-200 flex-1 text-sm">{title}</span>
                   <button
                     onClick={() => copyTitle(title, index)}
-                    className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-600 rounded transition-colors"
+                    className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-600 rounded transition-colors opacity-60 group-hover:opacity-100"
                   >
                     {copiedIndex === index ? <Check className="w-4 h-4 text-green-400" /> : <Copy className="w-4 h-4" />}
                   </button>
@@ -156,6 +154,7 @@ Requirements:
   );
 }
 
+// ==================== YOUTUBE SCRIPT WRITER ====================
 export function YouTubeScriptWriter() {
   const [topic, setTopic] = useState('');
   const [videoType, setVideoType] = useState('educational');
@@ -176,29 +175,23 @@ export function YouTubeScriptWriter() {
 
 Target length: ${lengthLabel}
 
-Include these sections:
-1. HOOK/INTRO - Grab attention in first 5 seconds
-2. INTRODUCTION - Introduce the topic and yourself
-3. MAIN CONTENT - Detailed content with clear segments
-4. CALL TO ACTION - Ask viewers to like, subscribe, comment
-5. OUTRO - End the video professionally
+Structure the script with these clear sections (each section heading on its own line):
 
-Requirements:
-- Make section headings clear and prominent
-- Include speaker cues like [PAUSE], [SHOW ON SCREEN], [B-ROLL] where appropriate
-- Write in a conversational, engaging tone
-- Do NOT use hash symbols, asterisks, or single quotes
-- Make the script ready for recording
+HOOK (First 5 seconds - grab attention immediately)
 
-Respond with only the script.`;
+INTRODUCTION (Introduce topic and set expectations)
+
+MAIN CONTENT (The core of the video, broken into clear segments with natural transitions)
+
+CALL TO ACTION (Ask viewers to like, subscribe, and comment)
+
+OUTRO (Professional ending)
+
+Include speaker cues like [PAUSE], [SHOW ON SCREEN], [B-ROLL] where appropriate. Write in a conversational, engaging tone that works well when spoken aloud. Make it sound natural and authentic. Follow any language instructions in the topic.`;
 
     const { error: apiError, output } = await generateText(prompt);
-    
-    if (apiError) {
-      setError(apiError);
-    } else {
-      setResult(output);
-    }
+    if (apiError) setError(apiError);
+    else setResult(output);
     setLoading(false);
   };
 
@@ -224,6 +217,7 @@ Respond with only the script.`;
   );
 }
 
+// ==================== YOUTUBE DESCRIPTION GENERATOR ====================
 export function YouTubeDescriptionGenerator() {
   const [title, setTitle] = useState('');
   const [keywords, setKeywords] = useState('');
@@ -236,29 +230,23 @@ export function YouTubeDescriptionGenerator() {
     setLoading(true);
     setError('');
     
-    const prompt = `Create an SEO-friendly YouTube description for a video titled: "${title}"
+    const prompt = `Create an SEO-optimized YouTube video description for: "${title}"
 
-${keywords ? `Keywords/Audience: ${keywords}` : ''}
+${keywords ? `Target keywords and audience: ${keywords}` : ''}
 
-Requirements:
-- First 2 sentences should be compelling (shown in search results)
-- Include a clear summary of video content
-- Add a timestamps section placeholder
-- Include call to action (subscribe, like, comment)
-- Add social media links placeholder section
-- End with 5-8 relevant hashtags
-- Make it professional and engaging
-- Do NOT use asterisks or single quotes in the description
+Structure:
+- First 2 lines should be compelling (these show in search results before "Show more")
+- Clear summary of video content
+- Timestamps section (use placeholder timestamps like 0:00, 1:30, etc.)
+- Call to action (subscribe, like, comment)
+- Social media links section placeholder
+- End with 6-10 relevant and trending hashtags
 
-Respond with only the description including hashtags.`;
+Make it professional, engaging, and optimized for YouTube search. Include keywords naturally throughout.`;
 
     const { error: apiError, output } = await generateText(prompt);
-    
-    if (apiError) {
-      setError(apiError);
-    } else {
-      setResult(output);
-    }
+    if (apiError) setError(apiError);
+    else setResult(output);
     setLoading(false);
   };
 
@@ -287,6 +275,7 @@ Respond with only the description including hashtags.`;
   );
 }
 
+// ==================== YOUTUBE TAG GENERATOR ====================
 export function YouTubeTagGenerator() {
   const [title, setTitle] = useState('');
   const [language, setLanguage] = useState('english');
@@ -305,13 +294,13 @@ export function YouTubeTagGenerator() {
 
 Language for tags: ${language}
 
-Requirements:
-- Mix of broad and specific tags
-- Include trending related terms
-- Include both short and long-tail keywords
-- No special characters except necessary ones
-- Return ONLY the tags, comma-separated on one line
-- Do NOT use asterisks, hash symbols, or single quotes`;
+Include a mix of:
+- Broad category tags
+- Specific topic tags  
+- Long-tail keyword tags
+- Trending related terms
+
+Return ONLY the tags separated by commas on a single line. No numbering, no explanations, just comma-separated tags.`;
 
     const { error: apiError, output } = await generateText(prompt);
     
@@ -375,7 +364,7 @@ Requirements:
               {tags.map((tag, index) => (
                 <span 
                   key={index}
-                  className="px-3 py-1.5 bg-blue-600/20 text-blue-300 rounded-full text-sm border border-blue-500/30"
+                  className="px-3 py-1.5 bg-blue-600/20 text-blue-300 rounded-full text-sm border border-blue-500/30 hover:bg-blue-600/30 transition-colors"
                 >
                   {tag}
                 </span>
@@ -392,6 +381,7 @@ Requirements:
   );
 }
 
+// ==================== TOOL WRAPPER ====================
 export function SocialToolWrapper({ toolId }: SocialToolProps) {
   switch (toolId) {
     case 'youtube-title':

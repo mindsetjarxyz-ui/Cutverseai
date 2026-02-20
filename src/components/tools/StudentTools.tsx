@@ -11,18 +11,36 @@ interface StudentToolProps {
 }
 
 const wordCountOptions = [
-  { value: '100', label: '100 words' },
-  { value: '200', label: '200 words' },
-  { value: '300', label: '300 words' },
-  { value: '400', label: '400 words' },
-  { value: '500', label: '500 words' },
+  { value: '100', label: '100' },
+  { value: '200', label: '200' },
+  { value: '300', label: '300' },
+  { value: '400', label: '400' },
+  { value: '500', label: '500' },
+  { value: 'custom', label: 'Custom' },
 ];
 
 const essayWordCountOptions = [
-  { value: '300', label: '300 words' },
-  { value: '500', label: '500 words' },
-  { value: '600', label: '600 words' },
-  { value: '800', label: '800 words' },
+  { value: '300', label: '300' },
+  { value: '500', label: '500' },
+  { value: '600', label: '600' },
+  { value: '800', label: '800' },
+  { value: 'custom', label: 'Custom' },
+];
+
+const storyWordCountOptions = [
+  { value: '300', label: '300' },
+  { value: '500', label: '500' },
+  { value: '700', label: '700' },
+  { value: '1000', label: '1000' },
+  { value: 'custom', label: 'Custom' },
+];
+
+const compositionWordCountOptions = [
+  { value: '200', label: '200' },
+  { value: '300', label: '300' },
+  { value: '400', label: '400' },
+  { value: '500', label: '500' },
+  { value: 'custom', label: 'Custom' },
 ];
 
 const stanceOptions = [
@@ -49,6 +67,65 @@ const compositionStyleOptions = [
   { value: 'reflective', label: 'Reflective' },
 ];
 
+const humanizeStyleOptions = [
+  { value: 'natural', label: 'Natural and Conversational' },
+  { value: 'professional', label: 'Professional but Human' },
+  { value: 'casual', label: 'Casual and Friendly' },
+  { value: 'academic', label: 'Academic but Readable' },
+];
+
+// Word Count Selector Component for reusability
+function WordCountSelector({ 
+  options, 
+  value, 
+  customValue, 
+  onChange, 
+  onCustomChange,
+  minWords = 50 
+}: {
+  options: { value: string; label: string }[];
+  value: string;
+  customValue: string;
+  onChange: (value: string) => void;
+  onCustomChange: (value: string) => void;
+  minWords?: number;
+}) {
+  return (
+    <div>
+      <label className="block text-xs sm:text-sm font-medium text-slate-300 mb-1.5 sm:mb-2">Word Count</label>
+      <div className="flex flex-wrap gap-1.5 sm:gap-2">
+        {options.map(opt => (
+          <button
+            key={opt.value}
+            onClick={() => onChange(opt.value)}
+            className={`px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-lg text-xs sm:text-sm transition-colors ${
+              value === opt.value 
+                ? 'bg-blue-600 text-white' 
+                : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+            }`}
+          >
+            {opt.label}
+          </button>
+        ))}
+      </div>
+      {value === 'custom' && (
+        <div className="mt-2 sm:mt-3">
+          <input
+            type="number"
+            min={minWords}
+            max="10000"
+            placeholder={`Enter word count (min ${minWords})`}
+            value={customValue}
+            onChange={(e) => onCustomChange(e.target.value)}
+            className="w-full px-3 py-2 sm:px-4 sm:py-2.5 bg-slate-700/50 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+          />
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ==================== APPLICATION WRITER ====================
 export function ApplicationWriter() {
   const [details, setDetails] = useState('');
   const [result, setResult] = useState('');
@@ -60,50 +137,35 @@ export function ApplicationWriter() {
     setLoading(true);
     setError('');
     
-    const prompt = `Write a formal application letter based on these details. Use academic and professional tone throughout.
-
-Details: ${details}
-
-Requirements:
-- Write a complete, well-structured application with proper formatting
-- Include date, recipient details, subject line, salutation, body paragraphs, and closing
-- Use formal and professional language
-- Do NOT use hash symbols, asterisks, or single quotes in your response
-- Make the title/subject clear and prominent
-- Include a proper sign-off
-
-Respond with only the application letter, nothing else.`;
+    const prompt = `Write a formal application letter based on these details:\n\n${details}\n\nWrite a complete, well-structured application with proper formatting. Use academic and professional tone throughout. Include a clear subject line on its own line, proper date, recipient address, salutation, well-organized body paragraphs, and a professional closing with signature. Make it ready to submit. Follow any language instructions in the details above.`;
 
     const { error: apiError, output } = await generateText(prompt);
-    
-    if (apiError) {
-      setError(apiError);
-    } else {
-      setResult(output);
-    }
+    if (apiError) setError(apiError);
+    else setResult(output);
     setLoading(false);
   };
 
   return (
-    <div className="grid lg:grid-cols-2 gap-6">
-      <div className="space-y-4">
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+      <div className="space-y-3 sm:space-y-4">
         <TextArea
           label="Application Details"
           placeholder="Explain who you are, why you are writing this application, and any important details. You can also type instructions like 'write in Bangla' or specify the recipient, reason, dates, etc."
           value={details}
           onChange={(e) => setDetails(e.target.value)}
-          rows={10}
+          rows={8}
         />
-        <Button onClick={handleGenerate} loading={loading} disabled={!details.trim()}>
+        <Button onClick={handleGenerate} loading={loading} disabled={!details.trim()} className="w-full sm:w-auto">
           Generate Application
         </Button>
-        {error && <p className="text-red-400 text-sm">{error}</p>}
+        {error && <p className="text-red-400 text-xs sm:text-sm">{error}</p>}
       </div>
       <ResultBox content={result} isLoading={loading} />
     </div>
   );
 }
 
+// ==================== LETTER WRITER ====================
 export function LetterWriter() {
   const [details, setDetails] = useState('');
   const [tone, setTone] = useState('formal');
@@ -121,50 +183,36 @@ export function LetterWriter() {
     setLoading(true);
     setError('');
     
-    const prompt = `Write a ${tone} letter based on these details:
-
-${details}
-
-Requirements:
-- Write a complete letter with proper greeting, body paragraphs, and closing
-- Use ${tone} tone and language throughout
-- Do NOT use hash symbols, asterisks, or single quotes
-- Make it well-structured and professional
-- Include appropriate salutation and sign-off
-
-Respond with only the letter, nothing else.`;
+    const prompt = `Write a ${tone} letter based on these details:\n\n${details}\n\nWrite a complete, well-structured letter with a proper greeting, well-organized body paragraphs, and an appropriate closing. Use ${tone} tone throughout. Make it feel genuine and personal. Include date and proper formatting. Follow any language instructions in the details above.`;
 
     const { error: apiError, output } = await generateText(prompt);
-    
-    if (apiError) {
-      setError(apiError);
-    } else {
-      setResult(output);
-    }
+    if (apiError) setError(apiError);
+    else setResult(output);
     setLoading(false);
   };
 
   return (
-    <div className="grid lg:grid-cols-2 gap-6">
-      <div className="space-y-4">
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+      <div className="space-y-3 sm:space-y-4">
         <TextArea
           label="Letter Details"
-          placeholder="Explain who you are writing to, the relationship, and purpose. You can request a specific language like 'write in Bangla'. Specify if it's a formal or informal letter."
+          placeholder="Explain who you are writing to, the relationship, and purpose. You can request a specific language like 'write in Bangla'. Describe the situation and what you want to say."
           value={details}
           onChange={(e) => setDetails(e.target.value)}
-          rows={8}
+          rows={6}
         />
         <Select label="Tone" options={toneOptions} value={tone} onChange={(e) => setTone(e.target.value)} />
-        <Button onClick={handleGenerate} loading={loading} disabled={!details.trim()}>
+        <Button onClick={handleGenerate} loading={loading} disabled={!details.trim()} className="w-full sm:w-auto">
           Generate Letter
         </Button>
-        {error && <p className="text-red-400 text-sm">{error}</p>}
+        {error && <p className="text-red-400 text-xs sm:text-sm">{error}</p>}
       </div>
       <ResultBox content={result} isLoading={loading} />
     </div>
   );
 }
 
+// ==================== DEBATE WRITER ====================
 export function DebateWriter() {
   const [topic, setTopic] = useState('');
   const [classLevel, setClassLevel] = useState('class-10');
@@ -179,36 +227,19 @@ export function DebateWriter() {
     setError('');
     
     const stanceText = stance === 'for' ? 'in favor of' : stance === 'against' ? 'against' : 'presenting both sides of';
-    const levelText = classLevel.replace('-', ' ').replace('class', 'Class');
+    const levelText = classLevel === 'university' ? 'University' : classLevel.replace('-', ' ').replace('class', 'Class');
     
-    const prompt = `Write a debate speech ${stanceText} the motion: "${topic}"
-
-This is for a ${levelText} student. Adjust vocabulary and complexity accordingly.
-
-Requirements:
-- Include a strong opening statement
-- Present main arguments with supporting points
-- Address counter-arguments with rebuttals
-- End with a powerful conclusion
-- Use vocabulary appropriate for ${levelText} level
-- Do NOT use hash symbols, asterisks, or single quotes
-- Make key arguments prominent
-
-Respond with only the debate speech, nothing else.`;
+    const prompt = `Write a debate speech ${stanceText} the motion: "${topic}"\n\nThis is for a ${levelText} level student. Adjust vocabulary, sentence complexity, and depth of arguments accordingly.\n\nStructure the speech with:\n- A strong, attention-grabbing opening statement\n- Three to four main arguments, each with supporting evidence or examples\n- Address and counter the opposing viewpoints\n- A powerful, memorable closing statement\n\nUse vocabulary and reasoning appropriate for ${levelText} level. Make the arguments clear and persuasive. Follow any language instructions in the topic.`;
 
     const { error: apiError, output } = await generateText(prompt);
-    
-    if (apiError) {
-      setError(apiError);
-    } else {
-      setResult(output);
-    }
+    if (apiError) setError(apiError);
+    else setResult(output);
     setLoading(false);
   };
 
   return (
-    <div className="grid lg:grid-cols-2 gap-6">
-      <div className="space-y-4">
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+      <div className="space-y-3 sm:space-y-4">
         <TextArea
           label="Debate Topic"
           placeholder="Enter the debate topic, for example: Should homework be banned? You can add language instructions like 'write in Hindi'."
@@ -216,18 +247,21 @@ Respond with only the debate speech, nothing else.`;
           onChange={(e) => setTopic(e.target.value)}
           rows={4}
         />
-        <Select label="Class Level" options={classOptions} value={classLevel} onChange={(e) => setClassLevel(e.target.value)} />
-        <Select label="Stance" options={stanceOptions} value={stance} onChange={(e) => setStance(e.target.value)} />
-        <Button onClick={handleGenerate} loading={loading} disabled={!topic.trim()}>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+          <Select label="Class Level" options={classOptions} value={classLevel} onChange={(e) => setClassLevel(e.target.value)} />
+          <Select label="Stance" options={stanceOptions} value={stance} onChange={(e) => setStance(e.target.value)} />
+        </div>
+        <Button onClick={handleGenerate} loading={loading} disabled={!topic.trim()} className="w-full sm:w-auto">
           Generate Debate
         </Button>
-        {error && <p className="text-red-400 text-sm">{error}</p>}
+        {error && <p className="text-red-400 text-xs sm:text-sm">{error}</p>}
       </div>
       <ResultBox content={result} isLoading={loading} />
     </div>
   );
 }
 
+// ==================== SPEECH WRITER ====================
 export function SpeechWriter() {
   const [topic, setTopic] = useState('');
   const [classLevel, setClassLevel] = useState('class-10');
@@ -241,36 +275,19 @@ export function SpeechWriter() {
     setLoading(true);
     setError('');
     
-    const levelText = classLevel.replace('-', ' ').replace('class', 'Class');
+    const levelText = classLevel === 'university' ? 'University' : classLevel.replace('-', ' ').replace('class', 'Class');
     
-    const prompt = `Write a ${duration} speech on: "${topic}"
-
-This is for a ${levelText} student. Adjust vocabulary and complexity accordingly.
-
-Requirements:
-- Include an appropriate greeting for the occasion
-- Write an engaging introduction
-- Develop main content with clear points
-- End with a memorable conclusion
-- Use vocabulary suitable for ${levelText}
-- Do NOT use hash symbols, asterisks, or single quotes
-- Make the speech engaging and appropriate for delivery
-
-Respond with only the speech, nothing else.`;
+    const prompt = `Write a ${duration}-length speech on: "${topic}"\n\nThis is for a ${levelText} level student. Adjust vocabulary and complexity accordingly.\n\nStructure the speech naturally with:\n- An appropriate and warm greeting\n- An engaging opening that captures attention\n- Well-developed main content with clear ideas flowing naturally\n- A memorable and impactful conclusion\n\nUse ${levelText}-appropriate vocabulary. Make the speech feel genuine and engaging, suitable for delivery in front of an audience. Follow any language instructions in the topic.`;
 
     const { error: apiError, output } = await generateText(prompt);
-    
-    if (apiError) {
-      setError(apiError);
-    } else {
-      setResult(output);
-    }
+    if (apiError) setError(apiError);
+    else setResult(output);
     setLoading(false);
   };
 
   return (
-    <div className="grid lg:grid-cols-2 gap-6">
-      <div className="space-y-4">
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+      <div className="space-y-3 sm:space-y-4">
         <TextArea
           label="Speech Topic and Details"
           placeholder="Enter the topic and any specific instructions. You can specify speech type (welcome, farewell, motivational) and language like 'write in Bangla'."
@@ -278,18 +295,21 @@ Respond with only the speech, nothing else.`;
           onChange={(e) => setTopic(e.target.value)}
           rows={4}
         />
-        <Select label="Class Level" options={classOptions} value={classLevel} onChange={(e) => setClassLevel(e.target.value)} />
-        <Select label="Duration" options={durationOptions} value={duration} onChange={(e) => setDuration(e.target.value)} />
-        <Button onClick={handleGenerate} loading={loading} disabled={!topic.trim()}>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+          <Select label="Class Level" options={classOptions} value={classLevel} onChange={(e) => setClassLevel(e.target.value)} />
+          <Select label="Duration" options={durationOptions} value={duration} onChange={(e) => setDuration(e.target.value)} />
+        </div>
+        <Button onClick={handleGenerate} loading={loading} disabled={!topic.trim()} className="w-full sm:w-auto">
           Generate Speech
         </Button>
-        {error && <p className="text-red-400 text-sm">{error}</p>}
+        {error && <p className="text-red-400 text-xs sm:text-sm">{error}</p>}
       </div>
       <ResultBox content={result} isLoading={loading} />
     </div>
   );
 }
 
+// ==================== SUMMARY GENERATOR ====================
 export function SummaryGenerator() {
   const [text, setText] = useState('');
   const [classLevel, setClassLevel] = useState('class-10');
@@ -303,54 +323,42 @@ export function SummaryGenerator() {
     setLoading(true);
     setError('');
     
-    const levelText = classLevel.replace('-', ' ').replace('class', 'Class');
+    const levelText = classLevel === 'university' ? 'University' : classLevel.replace('-', ' ').replace('class', 'Class');
+    const styleGuide = style === 'very-short' ? 'very brief, 3-5 sentences maximum' : style === 'medium' ? 'moderate length, covering all main points' : 'detailed but using simple language, covering all important aspects';
     
-    const prompt = `Summarize this text in a ${style} way for a ${levelText} student:
-
-"${text}"
-
-Requirements:
-- Use vocabulary appropriate for ${levelText}
-- For lower classes, use very simple words and short sentences
-- For university level, keep key technical terms but explain clearly
-- Make the summary clear and easy to understand
-- Do NOT use hash symbols, asterisks, or single quotes
-- Highlight the main ideas
-
-Respond with only the summary, nothing else.`;
+    const prompt = `Summarize this text for a ${levelText} student. Make it ${styleGuide}:\n\n"${text}"\n\nFor ${levelText} level, use appropriate vocabulary - simple words for lower classes, and clear technical terms for university. Start with a clear title like "Summary" then provide the summarized content. Highlight the main ideas clearly.`;
 
     const { error: apiError, output } = await generateText(prompt);
-    
-    if (apiError) {
-      setError(apiError);
-    } else {
-      setResult(output);
-    }
+    if (apiError) setError(apiError);
+    else setResult(output);
     setLoading(false);
   };
 
   return (
-    <div className="grid lg:grid-cols-2 gap-6">
-      <div className="space-y-4">
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+      <div className="space-y-3 sm:space-y-4">
         <TextArea
           label="Text to Summarize"
           placeholder="Paste the long text, article, or chapter you want to summarize..."
           value={text}
           onChange={(e) => setText(e.target.value)}
-          rows={10}
+          rows={8}
         />
-        <Select label="Class Level" options={classOptions} value={classLevel} onChange={(e) => setClassLevel(e.target.value)} />
-        <Select label="Summary Style" options={summaryStyleOptions} value={style} onChange={(e) => setStyle(e.target.value)} />
-        <Button onClick={handleGenerate} loading={loading} disabled={!text.trim()}>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+          <Select label="Class Level" options={classOptions} value={classLevel} onChange={(e) => setClassLevel(e.target.value)} />
+          <Select label="Summary Style" options={summaryStyleOptions} value={style} onChange={(e) => setStyle(e.target.value)} />
+        </div>
+        <Button onClick={handleGenerate} loading={loading} disabled={!text.trim()} className="w-full sm:w-auto">
           Generate Summary
         </Button>
-        {error && <p className="text-red-400 text-sm">{error}</p>}
+        {error && <p className="text-red-400 text-xs sm:text-sm">{error}</p>}
       </div>
       <ResultBox content={result} isLoading={loading} />
     </div>
   );
 }
 
+// ==================== GRAMMAR CORRECTOR ====================
 export function GrammarCorrector() {
   const [text, setText] = useState('');
   const [result, setResult] = useState('');
@@ -361,54 +369,41 @@ export function GrammarCorrector() {
     if (!text.trim()) return;
     setLoading(true);
     setError('');
+    setResult('');
     
-    const prompt = `Correct the grammar, spelling, and sentence structure of this text. Rewrite sentences to be clearer, more natural, and grammatically correct while keeping the original meaning:
-
-"${text}"
-
-Requirements:
-- Fix all grammar and spelling errors
-- Improve sentence structure for clarity
-- Rewrite awkward sentences naturally
-- Keep the original meaning and tone
-- Do NOT use hash symbols, asterisks, or single quotes
-- Start with "Corrected Text" as the heading
-
-Respond with only the corrected text with the heading.`;
+    const prompt = `You are an expert grammar corrector and writing improvement assistant. Your job is to fix ALL errors and make the text professional and well-written.\n\nYOUR TASKS:\n1. Fix ALL spelling mistakes and typos completely\n2. Fix ALL grammar and punctuation errors\n3. Rewrite sentences to be clear, professional, and well-structured\n4. Improve word choices to sound more polished and educated\n5. Combine choppy sentences into smooth, flowing prose when needed\n6. Make the text sound professional and impressive\n7. Use proper capitalization, punctuation, and formatting\n8. Keep the original meaning while upgrading the quality significantly\n\nEXAMPLES:\n\nInput: "my name is tahmid. i live in bangladesh i am currently reading in class 8 and my roll is 3"\nOutput: "My name is Tahmid. I live in Bangladesh. I am currently studying in Class 8, and my roll number is 3."\n\nInput: "i went to school today it was good the teacher teached us math"\nOutput: "I went to school today, and it was a great experience. The teacher taught us mathematics."\n\nInput: "he dont know nothing about this thing"\nOutput: "He does not know anything about this matter."\n\nNow fix all errors and professionally improve this text:\n\n"${text}"\n\nStart with "Corrected Text" as the heading, then provide the fully corrected and professionally improved version.`;
 
     const { error: apiError, output } = await generateText(prompt);
-    
-    if (apiError) {
-      setError(apiError);
-    } else {
-      setResult(output);
-    }
+    if (apiError) setError(apiError);
+    else setResult(output);
     setLoading(false);
   };
 
   return (
-    <div className="grid lg:grid-cols-2 gap-6">
-      <div className="space-y-4">
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+      <div className="space-y-3 sm:space-y-4">
         <TextArea
           label="Text to Correct"
-          placeholder="Paste any text that needs grammar and spelling correction. The AI will fix errors and improve sentence structure..."
+          placeholder="Paste any text here. The AI will fix all spelling and grammar errors AND rewrite sentences to be professional and well-written..."
           value={text}
           onChange={(e) => setText(e.target.value)}
-          rows={10}
+          rows={8}
         />
-        <Button onClick={handleGenerate} loading={loading} disabled={!text.trim()}>
+        <Button onClick={handleGenerate} loading={loading} disabled={!text.trim()} className="w-full sm:w-auto">
           Correct Text
         </Button>
-        {error && <p className="text-red-400 text-sm">{error}</p>}
+        {error && <p className="text-red-400 text-xs sm:text-sm">{error}</p>}
       </div>
       <ResultBox content={result} isLoading={loading} />
     </div>
   );
 }
 
+// ==================== PARAGRAPH WRITER ====================
 export function ParagraphWriter() {
   const [topic, setTopic] = useState('');
   const [wordCount, setWordCount] = useState('200');
+  const [customWordCount, setCustomWordCount] = useState('');
   const [classLevel, setClassLevel] = useState('class-10');
   const [result, setResult] = useState('');
   const [loading, setLoading] = useState(false);
@@ -416,39 +411,27 @@ export function ParagraphWriter() {
 
   const handleGenerate = async () => {
     if (!topic.trim()) return;
+    const finalWordCount = wordCount === 'custom' ? customWordCount : wordCount;
+    if (!finalWordCount || parseInt(finalWordCount) < 50) {
+      setError('Please enter a valid word count (minimum 50 words)');
+      return;
+    }
     setLoading(true);
     setError('');
     
-    const levelText = classLevel.replace('-', ' ').replace('class', 'Class');
+    const levelText = classLevel === 'university' ? 'University' : classLevel.replace('-', ' ').replace('class', 'Class');
     
-    const prompt = `Write a well-structured paragraph of approximately ${wordCount} words on: "${topic}"
-
-This is for a ${levelText} student. Adjust vocabulary and complexity accordingly.
-
-Requirements:
-- Start with a bold title for the paragraph
-- Include a clear topic sentence
-- Add supporting details and examples
-- End with a concluding sentence
-- Use vocabulary appropriate for ${levelText}
-- Do NOT use hash symbols, asterisks, or single quotes
-- Make key words and phrases prominent
-
-Respond with the title and paragraph only.`;
+    const prompt = `Write a well-structured paragraph of approximately ${finalWordCount} words on: "${topic}"\n\nThis is for a ${levelText} student.\n\nStart with a clear, bold title for the paragraph on its own line. Then write the paragraph with:\n- A strong topic sentence that introduces the main idea\n- Supporting details, examples, and explanations that develop the idea\n- Smooth transitions between sentences\n- A concluding sentence that ties everything together\n\nUse ${levelText}-appropriate vocabulary. Make important words and phrases stand out naturally. Follow any language instructions in the topic.`;
 
     const { error: apiError, output } = await generateText(prompt);
-    
-    if (apiError) {
-      setError(apiError);
-    } else {
-      setResult(output);
-    }
+    if (apiError) setError(apiError);
+    else setResult(output);
     setLoading(false);
   };
 
   return (
-    <div className="grid lg:grid-cols-2 gap-6">
-      <div className="space-y-4">
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+      <div className="space-y-3 sm:space-y-4">
         <TextArea
           label="Topic and Details"
           placeholder="Enter the topic and any details. Example: My Best Friend, simple language, write in Bangla."
@@ -456,38 +439,30 @@ Respond with the title and paragraph only.`;
           onChange={(e) => setTopic(e.target.value)}
           rows={4}
         />
-        <div>
-          <label className="block text-sm font-medium text-slate-300 mb-2">Word Count</label>
-          <div className="flex flex-wrap gap-2">
-            {wordCountOptions.map(opt => (
-              <button
-                key={opt.value}
-                onClick={() => setWordCount(opt.value)}
-                className={`px-3 py-1.5 rounded-lg text-sm transition-colors ${
-                  wordCount === opt.value 
-                    ? 'bg-blue-600 text-white' 
-                    : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
-                }`}
-              >
-                {opt.label}
-              </button>
-            ))}
-          </div>
-        </div>
+        <WordCountSelector
+          options={wordCountOptions}
+          value={wordCount}
+          customValue={customWordCount}
+          onChange={setWordCount}
+          onCustomChange={setCustomWordCount}
+          minWords={50}
+        />
         <Select label="Class Level" options={classOptions} value={classLevel} onChange={(e) => setClassLevel(e.target.value)} />
-        <Button onClick={handleGenerate} loading={loading} disabled={!topic.trim()}>
+        <Button onClick={handleGenerate} loading={loading} disabled={!topic.trim() || (wordCount === 'custom' && !customWordCount)} className="w-full sm:w-auto">
           Generate Paragraph
         </Button>
-        {error && <p className="text-red-400 text-sm">{error}</p>}
+        {error && <p className="text-red-400 text-xs sm:text-sm">{error}</p>}
       </div>
       <ResultBox content={result} isLoading={loading} />
     </div>
   );
 }
 
+// ==================== ESSAY WRITER ====================
 export function EssayWriter() {
   const [topic, setTopic] = useState('');
   const [wordCount, setWordCount] = useState('500');
+  const [customWordCount, setCustomWordCount] = useState('');
   const [classLevel, setClassLevel] = useState('class-10');
   const [result, setResult] = useState('');
   const [loading, setLoading] = useState(false);
@@ -495,40 +470,27 @@ export function EssayWriter() {
 
   const handleGenerate = async () => {
     if (!topic.trim()) return;
+    const finalWordCount = wordCount === 'custom' ? customWordCount : wordCount;
+    if (!finalWordCount || parseInt(finalWordCount) < 100) {
+      setError('Please enter a valid word count (minimum 100 words)');
+      return;
+    }
     setLoading(true);
     setError('');
     
-    const levelText = classLevel.replace('-', ' ').replace('class', 'Class');
+    const levelText = classLevel === 'university' ? 'University' : classLevel.replace('-', ' ').replace('class', 'Class');
     
-    const prompt = `Write a comprehensive essay of approximately ${wordCount} words on: "${topic}"
-
-This is for a ${levelText} student. Adjust vocabulary and complexity accordingly.
-
-Requirements:
-- Start with a clear, bold title
-- Include an Introduction paragraph with a heading
-- Write 2-3 Body paragraphs, each with its own heading/name
-- End with a Conclusion paragraph with heading
-- Use vocabulary appropriate for ${levelText}
-- Do NOT use hash symbols, asterisks, or single quotes
-- Make headings and key concepts prominent
-- Include good transitions between paragraphs
-
-Respond with the complete essay with all headings.`;
+    const prompt = `Write a comprehensive essay of approximately ${finalWordCount} words on: "${topic}"\n\nThis is for a ${levelText} student. Adjust vocabulary and depth accordingly.\n\nStructure the essay with clear sections:\n\nStart with the essay title on its own line.\n\nThen write an Introduction paragraph with its heading on its own line.\n\nThen write 2-3 Body paragraphs, each with a descriptive paragraph name/heading on its own line (like "The Importance of..." or "Impact on Society" etc.)\n\nEnd with a Conclusion paragraph with its heading on its own line.\n\nEach section heading should be on its own line. Use smooth transitions between paragraphs. Include relevant examples and evidence. Make important concepts and key phrases stand out naturally. Use ${levelText}-appropriate vocabulary throughout. Follow any language instructions in the topic.`;
 
     const { error: apiError, output } = await generateText(prompt);
-    
-    if (apiError) {
-      setError(apiError);
-    } else {
-      setResult(output);
-    }
+    if (apiError) setError(apiError);
+    else setResult(output);
     setLoading(false);
   };
 
   return (
-    <div className="grid lg:grid-cols-2 gap-6">
-      <div className="space-y-4">
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+      <div className="space-y-3 sm:space-y-4">
         <TextArea
           label="Topic and Instructions"
           placeholder="Enter the essay topic and any specific instructions. You can specify language preferences like 'write in Hindi'."
@@ -536,37 +498,30 @@ Respond with the complete essay with all headings.`;
           onChange={(e) => setTopic(e.target.value)}
           rows={4}
         />
-        <div>
-          <label className="block text-sm font-medium text-slate-300 mb-2">Word Count</label>
-          <div className="flex flex-wrap gap-2">
-            {essayWordCountOptions.map(opt => (
-              <button
-                key={opt.value}
-                onClick={() => setWordCount(opt.value)}
-                className={`px-3 py-1.5 rounded-lg text-sm transition-colors ${
-                  wordCount === opt.value 
-                    ? 'bg-blue-600 text-white' 
-                    : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
-                }`}
-              >
-                {opt.label}
-              </button>
-            ))}
-          </div>
-        </div>
+        <WordCountSelector
+          options={essayWordCountOptions}
+          value={wordCount}
+          customValue={customWordCount}
+          onChange={setWordCount}
+          onCustomChange={setCustomWordCount}
+          minWords={100}
+        />
         <Select label="Class Level" options={classOptions} value={classLevel} onChange={(e) => setClassLevel(e.target.value)} />
-        <Button onClick={handleGenerate} loading={loading} disabled={!topic.trim()}>
+        <Button onClick={handleGenerate} loading={loading} disabled={!topic.trim() || (wordCount === 'custom' && !customWordCount)} className="w-full sm:w-auto">
           Generate Essay
         </Button>
-        {error && <p className="text-red-400 text-sm">{error}</p>}
+        {error && <p className="text-red-400 text-xs sm:text-sm">{error}</p>}
       </div>
       <ResultBox content={result} isLoading={loading} />
     </div>
   );
 }
 
+// ==================== COMPOSITION WRITER ====================
 export function CompositionWriter() {
   const [topic, setTopic] = useState('');
+  const [wordCount, setWordCount] = useState('300');
+  const [customWordCount, setCustomWordCount] = useState('');
   const [classLevel, setClassLevel] = useState('class-10');
   const [style, setStyle] = useState('narrative');
   const [result, setResult] = useState('');
@@ -575,40 +530,33 @@ export function CompositionWriter() {
 
   const handleGenerate = async () => {
     if (!topic.trim()) return;
+    const finalWordCount = wordCount === 'custom' ? customWordCount : wordCount;
+    if (!finalWordCount || parseInt(finalWordCount) < 100) {
+      setError('Please enter a valid word count (minimum 100 words)');
+      return;
+    }
     setLoading(true);
     setError('');
     
-    const levelText = classLevel.replace('-', ' ').replace('class', 'Class');
+    const levelText = classLevel === 'university' ? 'University' : classLevel.replace('-', ' ').replace('class', 'Class');
     
-    const prompt = `Write a ${style} composition on: "${topic}"
-
-This is for a ${levelText} student. Adjust vocabulary and complexity accordingly.
-
-Requirements:
-- Start with a bold title
-- Write as flowing prose WITHOUT paragraph names or section headings
-- For narrative style, use storytelling elements with characters and events
-- For descriptive style, use vivid imagery and sensory details
-- For reflective style, include personal thoughts and insights
-- Use vocabulary appropriate for ${levelText}
-- Do NOT use hash symbols, asterisks, or single quotes
-- Make the composition engaging and well-structured
-
-Respond with only the title and composition as flowing paragraphs.`;
+    const styleGuide = style === 'narrative' 
+      ? 'Use storytelling elements with characters, events, and a natural story arc. Make the reader feel like they are experiencing the story.'
+      : style === 'descriptive'
+      ? 'Use vivid imagery, sensory details (sight, sound, smell, touch, taste), and rich descriptions to paint a picture with words.'
+      : 'Include personal thoughts, reflections, insights, and lessons learned. Make it thoughtful and introspective.';
+    
+    const prompt = `Write a ${style} composition of approximately ${finalWordCount} words on: "${topic}"\n\nThis is for a ${levelText} student.\n\nStart with a creative title on its own line.\n\nThen write the composition as flowing prose paragraphs WITHOUT any section headings or paragraph names. Let the text flow naturally from one paragraph to the next like a real composition.\n\n${styleGuide}\n\nUse ${levelText}-appropriate vocabulary. Make it engaging, well-structured, and a pleasure to read. Follow any language instructions in the topic.`;
 
     const { error: apiError, output } = await generateText(prompt);
-    
-    if (apiError) {
-      setError(apiError);
-    } else {
-      setResult(output);
-    }
+    if (apiError) setError(apiError);
+    else setResult(output);
     setLoading(false);
   };
 
   return (
-    <div className="grid lg:grid-cols-2 gap-6">
-      <div className="space-y-4">
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+      <div className="space-y-3 sm:space-y-4">
         <TextArea
           label="Composition Topic"
           placeholder="Enter the topic. Examples: A rainy day, My school, A visit to the zoo, My favorite festival..."
@@ -616,20 +564,33 @@ Respond with only the title and composition as flowing paragraphs.`;
           onChange={(e) => setTopic(e.target.value)}
           rows={4}
         />
-        <Select label="Class Level" options={classOptions} value={classLevel} onChange={(e) => setClassLevel(e.target.value)} />
-        <Select label="Style" options={compositionStyleOptions} value={style} onChange={(e) => setStyle(e.target.value)} />
-        <Button onClick={handleGenerate} loading={loading} disabled={!topic.trim()}>
+        <WordCountSelector
+          options={compositionWordCountOptions}
+          value={wordCount}
+          customValue={customWordCount}
+          onChange={setWordCount}
+          onCustomChange={setCustomWordCount}
+          minWords={100}
+        />
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+          <Select label="Class Level" options={classOptions} value={classLevel} onChange={(e) => setClassLevel(e.target.value)} />
+          <Select label="Style" options={compositionStyleOptions} value={style} onChange={(e) => setStyle(e.target.value)} />
+        </div>
+        <Button onClick={handleGenerate} loading={loading} disabled={!topic.trim() || (wordCount === 'custom' && !customWordCount)} className="w-full sm:w-auto">
           Generate Composition
         </Button>
-        {error && <p className="text-red-400 text-sm">{error}</p>}
+        {error && <p className="text-red-400 text-xs sm:text-sm">{error}</p>}
       </div>
       <ResultBox content={result} isLoading={loading} />
     </div>
   );
 }
 
+// ==================== STORY GENERATOR ====================
 export function StoryGenerator() {
   const [topic, setTopic] = useState('');
+  const [wordCount, setWordCount] = useState('500');
+  const [customWordCount, setCustomWordCount] = useState('');
   const [classLevel, setClassLevel] = useState('class-10');
   const [result, setResult] = useState('');
   const [loading, setLoading] = useState(false);
@@ -637,58 +598,109 @@ export function StoryGenerator() {
 
   const handleGenerate = async () => {
     if (!topic.trim()) return;
+    const finalWordCount = wordCount === 'custom' ? customWordCount : wordCount;
+    if (!finalWordCount || parseInt(finalWordCount) < 100) {
+      setError('Please enter a valid word count (minimum 100 words)');
+      return;
+    }
     setLoading(true);
     setError('');
     
-    const levelText = classLevel.replace('-', ' ').replace('class', 'Class');
+    const levelText = classLevel === 'university' ? 'University' : classLevel.replace('-', ' ').replace('class', 'Class');
     
-    const prompt = `Write an engaging story based on: "${topic}"
-
-This is for a ${levelText} student. Adjust vocabulary, complexity, and themes accordingly.
-
-Requirements:
-- Start with an attention-grabbing title
-- Write an engaging introduction that sets the scene
-- Develop well-rounded characters
-- Include rising action, climax, and resolution
-- End with a satisfying conclusion, optionally with a moral or lesson
-- Use vocabulary appropriate for ${levelText}
-- Do NOT use hash symbols, asterisks, or single quotes
-- Make key moments and dialogue prominent
-
-Respond with only the story with its title.`;
+    const prompt = `Write an engaging and creative story of approximately ${finalWordCount} words based on: "${topic}"\n\nThis is for a ${levelText} student. Adjust vocabulary, themes, and complexity accordingly.\n\nStart with a compelling story title on its own line.\n\nThen write the story with:\n- An attention-grabbing opening that sets the scene and introduces characters\n- Rising action that builds tension and interest\n- A meaningful climax or turning point\n- A satisfying resolution\n- Optionally end with a moral or lesson if appropriate\n\nMake the characters feel real, the dialogue natural, and the descriptions vivid. Use ${levelText}-appropriate vocabulary. Follow any language instructions in the topic.`;
 
     const { error: apiError, output } = await generateText(prompt);
-    
-    if (apiError) {
-      setError(apiError);
-    } else {
-      setResult(output);
-    }
+    if (apiError) setError(apiError);
+    else setResult(output);
     setLoading(false);
   };
 
   return (
-    <div className="grid lg:grid-cols-2 gap-6">
-      <div className="space-y-4">
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+      <div className="space-y-3 sm:space-y-4">
         <TextArea
           label="Story Topic and Details"
           placeholder="Enter the story topic, characters, setting, or any specific details. You can specify language preferences like 'write in Bangla'."
           value={topic}
           onChange={(e) => setTopic(e.target.value)}
-          rows={6}
+          rows={5}
+        />
+        <WordCountSelector
+          options={storyWordCountOptions}
+          value={wordCount}
+          customValue={customWordCount}
+          onChange={setWordCount}
+          onCustomChange={setCustomWordCount}
+          minWords={100}
         />
         <Select label="Class Level" options={classOptions} value={classLevel} onChange={(e) => setClassLevel(e.target.value)} />
-        <Button onClick={handleGenerate} loading={loading} disabled={!topic.trim()}>
+        <Button onClick={handleGenerate} loading={loading} disabled={!topic.trim() || (wordCount === 'custom' && !customWordCount)} className="w-full sm:w-auto">
           Generate Story
         </Button>
-        {error && <p className="text-red-400 text-sm">{error}</p>}
+        {error && <p className="text-red-400 text-xs sm:text-sm">{error}</p>}
       </div>
       <ResultBox content={result} isLoading={loading} />
     </div>
   );
 }
 
+// ==================== AI HUMANIZER ====================
+export function AIHumanizer() {
+  const [text, setText] = useState('');
+  const [style, setStyle] = useState('natural');
+  const [result, setResult] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleGenerate = async () => {
+    if (!text.trim()) return;
+    setLoading(true);
+    setError('');
+    
+    const styleGuide = style === 'natural' 
+      ? 'Make it sound like a real person wrote it in a conversational, natural way. Add personal touches, varied sentence lengths, and natural flow.'
+      : style === 'professional'
+      ? 'Keep it professional but make it sound like a real human expert wrote it, not a machine. Add subtle personality and natural phrasing.'
+      : style === 'casual'
+      ? 'Make it sound casual and friendly, like someone talking to a friend. Use informal language, contractions, and a warm tone.'
+      : 'Keep the academic quality but make it read like a knowledgeable human student or researcher wrote it naturally.';
+    
+    const prompt = `Humanize this text to make it sound like a real person wrote it, not an AI. Rewrite it completely while keeping the same meaning and information:\n\n"${text}"\n\nStyle: ${styleGuide}\n\nImportant guidelines for humanizing:\n- Vary sentence length naturally (mix short punchy sentences with longer ones)\n- Use natural transitions and connecting words that humans use\n- Add subtle imperfections that make text feel human (like starting a sentence with "And" or "But" occasionally)\n- Avoid overly formal or robotic phrasing\n- Remove any patterns that feel repetitive or formulaic\n- Make the vocabulary choices feel natural and varied\n- Keep the tone genuine and authentic\n- Maintain the original meaning and all key information\n- The result should pass AI detection tools as human-written\n\nStart with "Humanized Text" as the heading, then provide the rewritten version.`;
+
+    const { error: apiError, output } = await generateText(prompt);
+    if (apiError) setError(apiError);
+    else setResult(output);
+    setLoading(false);
+  };
+
+  return (
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+      <div className="space-y-3 sm:space-y-4">
+        <TextArea
+          label="Paste Your Content"
+          placeholder="Paste any AI-generated text here and the AI will rewrite it to sound more natural and human-written. This helps bypass AI detection tools and makes the text feel genuine."
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          rows={8}
+        />
+        <Select 
+          label="Humanization Style" 
+          options={humanizeStyleOptions} 
+          value={style} 
+          onChange={(e) => setStyle(e.target.value)} 
+        />
+        <Button onClick={handleGenerate} loading={loading} disabled={!text.trim()} className="w-full sm:w-auto">
+          Humanize Text
+        </Button>
+        {error && <p className="text-red-400 text-xs sm:text-sm">{error}</p>}
+      </div>
+      <ResultBox content={result} isLoading={loading} />
+    </div>
+  );
+}
+
+// ==================== TOOL WRAPPER ====================
 export function StudentToolWrapper({ toolId }: StudentToolProps) {
   switch (toolId) {
     case 'application-writer':
@@ -711,6 +723,8 @@ export function StudentToolWrapper({ toolId }: StudentToolProps) {
       return <CompositionWriter />;
     case 'story-generator':
       return <StoryGenerator />;
+    case 'ai-humanizer':
+      return <AIHumanizer />;
     default:
       return <div className="text-slate-400">Tool not found</div>;
   }

@@ -18,6 +18,7 @@ import {
   Baby,
   Newspaper,
   Instagram,
+  UserCheck,
   LucideIcon
 } from 'lucide-react';
 
@@ -99,6 +100,13 @@ export const tools: Tool[] = [
     title: 'Story Generator',
     description: 'Generate creative stories based on topic and class level',
     icon: BookOpenCheck,
+    category: 'student'
+  },
+  {
+    id: 'ai-humanizer',
+    title: 'AI Humanizer',
+    description: 'Make AI-generated text sound more natural and human-written',
+    icon: UserCheck,
     category: 'student'
   },
   

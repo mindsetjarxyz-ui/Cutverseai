@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Copy, Pencil, Save, Check } from 'lucide-react';
 import { cn } from '@/utils/cn';
 import { formatOutputText } from '@/services/ai';
@@ -22,50 +22,114 @@ export function ResultBox({
   const [isEditing, setIsEditing] = useState(false);
   const [editedContent, setEditedContent] = useState('');
   const [copied, setCopied] = useState(false);
-  const [skipTypewriter, setSkipTypewriter] = useState(false);
+  const [isTyping, setIsTyping] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const prevContentRef = useRef('');
-  const isEditedRef = useRef(false);
+  const wasEditedRef = useRef(false);
+  const typingRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
 
+  // Fast typing speed calculator - no cursor, quick animation
+  const getTypingDelay = useCallback((char: string, nextChar: string, position: number, totalLength: number): number => {
+    // Very fast base speed
+    const baseSpeed = 3;
+    
+    // Speed up as we go
+    const progressFactor = Math.max(0.3, 1 - (position / totalLength) * 0.6);
+    
+    // Brief punctuation pauses
+    if (char === '.') {
+      if (nextChar === '\n') return 25; // End of paragraph
+      return 15; // End of sentence
+    }
+    if (char === ',') return 8;
+    if (char === ':') return 10;
+    if (char === ';') return 10;
+    if (char === '!') return 15;
+    if (char === '?') return 15;
+    
+    // New line pauses
+    if (char === '\n') {
+      if (nextChar === '\n') return 20; // Paragraph break
+      return 10;
+    }
+    
+    // Space between words
+    if (char === ' ') return baseSpeed * progressFactor * 0.5;
+    
+    // Slight random variation (±20%)
+    const randomVariation = 0.8 + Math.random() * 0.4;
+    
+    // Burst typing - type very fast chunks
+    if (Math.random() < 0.25) return 1; // Ultra fast burst
+    
+    return baseSpeed * progressFactor * randomVariation;
+  }, []);
+
+  // Realistic typewriter effect
   useEffect(() => {
-    // Skip typewriter if content was edited or if skipTypewriter is true
-    if (skipTypewriter || isEditedRef.current) {
+    // If content was edited, skip typewriter
+    if (wasEditedRef.current) {
       setDisplayedContent(content);
       return;
     }
-    
-    // Only animate if content is new and different from previous
+
+    // Only animate if content is new
     if (content && content !== prevContentRef.current && showTypewriter) {
       setDisplayedContent('');
+      setIsTyping(true);
       let index = 0;
-      const speed = 2; // Very fast typewriter speed
-      
-      const timer = setInterval(() => {
+
+      const typeNextChar = () => {
         if (index < content.length) {
-          setDisplayedContent(content.slice(0, index + 1));
-          index++;
+          // Type in chunks for very fast parts (simulates burst typing)
+          const currentChar = content[index];
+          const nextChar = content[index + 1] || '';
+          
+          // Type larger chunks for faster animation (3-6 chars at once)
+          let chunkSize = 1;
+          if (Math.random() < 0.5 && index + 6 < content.length) {
+            const upcoming = content.slice(index, index + 6);
+            if (!/[.,!?\n:;]/.test(upcoming)) {
+              chunkSize = 3 + Math.floor(Math.random() * 4); // 3-6 chars
+            }
+          }
+          
+          const endIndex = Math.min(index + chunkSize, content.length);
+          setDisplayedContent(content.slice(0, endIndex));
+          
+          const delay = getTypingDelay(currentChar, nextChar, index, content.length);
+          index = endIndex;
+          
+          typingRef.current = setTimeout(typeNextChar, delay);
         } else {
-          clearInterval(timer);
+          setIsTyping(false);
         }
-      }, speed);
-      
+      };
+
+      typeNextChar();
       prevContentRef.current = content;
-      return () => clearInterval(timer);
+
+      return () => {
+        if (typingRef.current) {
+          clearTimeout(typingRef.current);
+        }
+      };
     } else if (content) {
       setDisplayedContent(content);
       prevContentRef.current = content;
     }
-  }, [content, showTypewriter, skipTypewriter]);
+  }, [content, showTypewriter, getTypingDelay]);
 
-  // Reset when content changes from external source (new generation)
+  // Auto-scroll during typing
   useEffect(() => {
-    if (content !== prevContentRef.current && !isEditedRef.current) {
-      setSkipTypewriter(false);
+    if (isTyping && contentRef.current) {
+      contentRef.current.scrollTop = contentRef.current.scrollHeight;
     }
-  }, [content]);
+  }, [displayedContent, isTyping]);
 
   const handleCopy = async () => {
-    const textToCopy = isEditing ? editedContent : (isEditedRef.current ? editedContent : content);
+    const textToCopy = wasEditedRef.current ? editedContent : content;
     const plainText = textToCopy.replace(/<[^>]*>/g, '');
     await navigator.clipboard.writeText(plainText);
     setCopied(true);
@@ -75,64 +139,81 @@ export function ResultBox({
   const handleEdit = () => {
     setEditedContent(displayedContent);
     setIsEditing(true);
+    // Stop typing animation if still running
+    if (typingRef.current) {
+      clearTimeout(typingRef.current);
+      setIsTyping(false);
+      setDisplayedContent(content);
+    }
     setTimeout(() => textareaRef.current?.focus(), 0);
   };
 
   const handleSave = () => {
     setIsEditing(false);
     setDisplayedContent(editedContent);
-    setSkipTypewriter(true); // Skip typewriter for edited content
-    isEditedRef.current = true; // Mark as edited
+    wasEditedRef.current = true;
     prevContentRef.current = editedContent;
     if (onContentChange) {
       onContentChange(editedContent);
     }
   };
 
+  // Reset edited flag when new content is generated (content changes from parent)
+  useEffect(() => {
+    if (content !== prevContentRef.current && !wasEditedRef.current) {
+      wasEditedRef.current = false;
+    }
+  }, [content]);
+
   const formattedContent = formatOutputText(displayedContent);
 
   return (
     <div className={cn('bg-slate-800/30 border border-slate-700/50 rounded-xl overflow-hidden', className)}>
       {/* Toolbar */}
-      <div className="flex items-center justify-between px-4 py-2 border-b border-slate-700/50 bg-slate-800/50">
-        <span className="text-xs text-slate-400 font-medium">Result</span>
+      <div className="flex items-center justify-between px-3 py-2 sm:px-4 border-b border-slate-700/50 bg-slate-800/50">
         <div className="flex items-center gap-2">
+          <span className="text-[10px] sm:text-xs text-slate-400 font-medium">Result</span>
+        </div>
+        <div className="flex items-center gap-1 sm:gap-2">
           <button
             onClick={handleCopy}
-            className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-700 rounded-md transition-colors"
+            className="p-1.5 sm:p-2 text-slate-400 hover:text-white hover:bg-slate-700 rounded-md transition-colors"
             title="Copy"
             disabled={!content && !displayedContent}
           >
-            {copied ? <Check className="w-4 h-4 text-green-400" /> : <Copy className="w-4 h-4" />}
+            {copied ? <Check className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-green-400" /> : <Copy className="w-3.5 h-3.5 sm:w-4 sm:h-4" />}
           </button>
           {isEditing ? (
             <button
               onClick={handleSave}
-              className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-700 rounded-md transition-colors"
+              className="p-1.5 sm:p-2 text-blue-400 hover:text-blue-300 hover:bg-slate-700 rounded-md transition-colors"
               title="Save"
             >
-              <Save className="w-4 h-4" />
+              <Save className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             </button>
           ) : (
             <button
               onClick={handleEdit}
-              className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-700 rounded-md transition-colors"
+              className="p-1.5 sm:p-2 text-slate-400 hover:text-white hover:bg-slate-700 rounded-md transition-colors"
               title="Edit"
               disabled={!content && !displayedContent}
             >
-              <Pencil className="w-4 h-4" />
+              <Pencil className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             </button>
           )}
         </div>
       </div>
       
       {/* Content */}
-      <div className="p-4 min-h-[200px] max-h-[500px] overflow-y-auto">
+      <div ref={contentRef} className="p-3 sm:p-4 md:p-5 min-h-[180px] sm:min-h-[220px] max-h-[400px] sm:max-h-[520px] overflow-y-auto scroll-smooth">
         {isLoading ? (
-          <div className="flex items-center justify-center h-32">
-            <div className="flex items-center gap-3 text-slate-400">
-              <div className="w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
-              <span className="text-sm">Generating...</span>
+          <div className="flex items-center justify-center h-32 sm:h-40">
+            <div className="flex flex-col items-center gap-2 sm:gap-3">
+              <div className="relative">
+                <div className="w-8 h-8 sm:w-10 sm:h-10 border-3 border-blue-500/30 rounded-full" />
+                <div className="absolute inset-0 w-8 h-8 sm:w-10 sm:h-10 border-3 border-blue-500 border-t-transparent rounded-full animate-spin" />
+              </div>
+              <span className="text-xs sm:text-sm text-slate-400">Generating content...</span>
             </div>
           </div>
         ) : isEditing ? (
@@ -140,16 +221,25 @@ export function ResultBox({
             ref={textareaRef}
             value={editedContent}
             onChange={(e) => setEditedContent(e.target.value)}
-            className="w-full h-full min-h-[200px] bg-transparent text-slate-200 resize-none focus:outline-none leading-relaxed"
+            className="w-full h-full min-h-[180px] sm:min-h-[220px] bg-transparent text-slate-200 resize-none focus:outline-none leading-relaxed text-sm sm:text-[15px]"
           />
         ) : displayedContent ? (
-          <div 
-            className="text-slate-200 leading-relaxed whitespace-pre-wrap prose prose-invert prose-sm max-w-none"
-            dangerouslySetInnerHTML={{ __html: formattedContent }}
-          />
+          <div className="animate-fadeIn">
+            <div 
+              className="result-text text-slate-200 leading-[1.8] sm:leading-[1.85] text-sm sm:text-[15px] whitespace-pre-wrap break-words"
+              dangerouslySetInnerHTML={{ __html: formattedContent }}
+            />
+          </div>
         ) : (
-          <div className="flex items-center justify-center h-32 text-slate-500 text-sm">
-            Your generated content will appear here
+          <div className="flex items-center justify-center h-32 sm:h-40 text-slate-500 text-xs sm:text-sm">
+            <div className="text-center px-4">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 mx-auto mb-2 sm:mb-3 rounded-xl bg-slate-700/30 flex items-center justify-center">
+                <svg className="w-5 h-5 sm:w-6 sm:h-6 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+              </div>
+              Your generated content will appear here
+            </div>
           </div>
         )}
       </div>

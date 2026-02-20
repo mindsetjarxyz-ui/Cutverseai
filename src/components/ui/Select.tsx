@@ -10,14 +10,14 @@ export function Select({ label, options, className, ...props }: SelectProps) {
   return (
     <div className="w-full">
       {label && (
-        <label className="block text-sm font-medium text-slate-300 mb-2">
+        <label className="block text-xs sm:text-sm font-medium text-slate-300 mb-1.5 sm:mb-2">
           {label}
         </label>
       )}
       <div className="relative">
         <select
           className={cn(
-            'w-full px-4 py-2.5 bg-slate-800/50 border border-slate-700 rounded-lg text-white appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 cursor-pointer',
+            'w-full px-3 py-2 sm:px-4 sm:py-2.5 bg-slate-800/50 border border-slate-700 rounded-lg text-white appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 cursor-pointer text-sm sm:text-base pr-10',
             className
           )}
           {...props}

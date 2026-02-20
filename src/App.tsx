@@ -18,20 +18,14 @@ export function App() {
   const filteredTools = useMemo(() => {
     let filtered = tools;
     
+    // Only filter by category - NO search filtering in the grid
+    // Search results are shown ONLY in the dropdown
     if (activeCategory !== 'all') {
       filtered = filtered.filter(tool => tool.category === activeCategory);
     }
     
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(tool => 
-        tool.title.toLowerCase().includes(query) ||
-        tool.description.toLowerCase().includes(query)
-      );
-    }
-    
     return filtered;
-  }, [activeCategory, searchQuery]);
+  }, [activeCategory]);
 
   const categoryTitles: Record<string, string> = {
     all: 'All AI Tools',
@@ -43,6 +37,7 @@ export function App() {
 
   const handleToolClick = (tool: Tool) => {
     setActiveTool(tool);
+    setSearchQuery(''); // Clear search when selecting a tool
   };
 
   const handleBack = () => {
@@ -73,25 +68,28 @@ export function App() {
         onCategoryChange={(cat) => {
           setActiveCategory(cat);
           setActiveTool(null);
+          setSearchQuery('');
         }}
         isOpen={sidebarOpen}
         onToggle={() => setSidebarOpen(!sidebarOpen)}
+        hideToggle={!!activeTool}
       />
       
-      <main className="lg:ml-64 min-h-screen">
+      <main className="lg:ml-64 min-h-screen flex flex-col">
         <Header 
           title={activeTool ? activeTool.title : categoryTitles[activeCategory]}
           showBack={!!activeTool}
           onBack={handleBack}
           searchQuery={searchQuery}
           onSearchChange={setSearchQuery}
+          onToolSelect={handleToolClick}
         />
         
-        <div className="p-4 sm:p-6">
+        <div className="flex-1 p-3 sm:p-4 md:p-6">
           {activeTool ? (
-            <div className="max-w-6xl mx-auto">
-              <div className="mb-6">
-                <p className="text-slate-400 text-sm">{activeTool.description}</p>
+            <div className="max-w-6xl mx-auto animate-fadeIn">
+              <div className="mb-4 sm:mb-6">
+                <p className="text-slate-400 text-xs sm:text-sm">{activeTool.description}</p>
               </div>
               {renderToolComponent()}
             </div>
@@ -99,32 +97,40 @@ export function App() {
             <>
               {/* Hero Section - Only show on All Tools */}
               {activeCategory === 'all' && !searchQuery && (
-                <div className="mb-8 p-6 sm:p-8 bg-gradient-to-r from-blue-600/20 to-indigo-600/20 border border-blue-500/20 rounded-2xl">
-                  <div className="max-w-2xl">
-                    <h2 className="text-2xl sm:text-3xl font-bold text-white mb-3">
-                      Create with Cutverse AI
-                    </h2>
-                    <p className="text-slate-300 mb-6">
-                      Professional AI tools for everyone. Generate content, images, and more with the power of artificial intelligence.
+                <div className="mb-8 sm:mb-10 py-10 sm:py-14 md:py-20 px-4 sm:px-6 md:px-8 bg-gradient-to-br from-slate-900 via-blue-950/50 to-slate-900 border border-blue-500/10 rounded-2xl sm:rounded-3xl relative overflow-hidden">
+                  {/* Background glow effects */}
+                  <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-blue-500/10 rounded-full blur-3xl pointer-events-none" />
+                  <div className="absolute top-1/2 left-1/4 -translate-y-1/2 w-[300px] h-[300px] bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
+                  <div className="absolute top-1/2 right-1/4 -translate-y-1/2 w-[300px] h-[300px] bg-purple-500/10 rounded-full blur-3xl pointer-events-none" />
+                  
+                  <div className="relative z-10 text-center">
+                    {/* Big Gradient Cutverse AI Title */}
+                    <h1 className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-black mb-4 sm:mb-6 bg-gradient-to-r from-blue-400 via-indigo-500 to-purple-500 bg-clip-text text-transparent animate-gradient" style={{ backgroundSize: '200% 200%' }}>
+                      Cutverse AI
+                    </h1>
+                    
+                    <p className="text-slate-400 text-sm sm:text-base md:text-lg max-w-xl mx-auto mb-6 sm:mb-8">
+                      Professional AI tools for everyone
                     </p>
-                    <div className="flex flex-wrap gap-4 sm:gap-6">
+                    
+                    <div className="flex flex-wrap justify-center gap-4 sm:gap-6 md:gap-8">
                       <div className="flex items-center gap-2 text-slate-300">
-                        <div className="w-8 h-8 bg-blue-500/20 rounded-lg flex items-center justify-center">
-                          <Zap className="w-4 h-4 text-blue-400" />
+                        <div className="w-8 h-8 sm:w-10 sm:h-10 bg-blue-500/20 rounded-xl flex items-center justify-center">
+                          <Zap className="w-4 h-4 sm:w-5 sm:h-5 text-blue-400" />
                         </div>
-                        <span className="text-sm">Lightning Fast</span>
+                        <span className="text-xs sm:text-sm font-medium">Lightning Fast</span>
                       </div>
                       <div className="flex items-center gap-2 text-slate-300">
-                        <div className="w-8 h-8 bg-green-500/20 rounded-lg flex items-center justify-center">
-                          <Shield className="w-4 h-4 text-green-400" />
+                        <div className="w-8 h-8 sm:w-10 sm:h-10 bg-green-500/20 rounded-xl flex items-center justify-center">
+                          <Shield className="w-4 h-4 sm:w-5 sm:h-5 text-green-400" />
                         </div>
-                        <span className="text-sm">Privacy First</span>
+                        <span className="text-xs sm:text-sm font-medium">Privacy First</span>
                       </div>
                       <div className="flex items-center gap-2 text-slate-300">
-                        <div className="w-8 h-8 bg-purple-500/20 rounded-lg flex items-center justify-center">
-                          <Sparkles className="w-4 h-4 text-purple-400" />
+                        <div className="w-8 h-8 sm:w-10 sm:h-10 bg-purple-500/20 rounded-xl flex items-center justify-center">
+                          <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 text-purple-400" />
                         </div>
-                        <span className="text-sm">Top Quality AI</span>
+                        <span className="text-xs sm:text-sm font-medium">Top Quality AI</span>
                       </div>
                     </div>
                   </div>
@@ -132,7 +138,7 @@ export function App() {
               )}
               
               {/* Tools Grid */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
                 {filteredTools.map(tool => (
                   <ToolCard
                     key={tool.id}
@@ -143,8 +149,8 @@ export function App() {
               </div>
               
               {filteredTools.length === 0 && (
-                <div className="text-center py-12">
-                  <p className="text-slate-400">No tools found matching your search.</p>
+                <div className="text-center py-8 sm:py-12">
+                  <p className="text-slate-400 text-sm sm:text-base">No tools available in this category.</p>
                 </div>
               )}
             </>
@@ -152,8 +158,8 @@ export function App() {
         </div>
         
         {/* Footer */}
-        <footer className="mt-auto py-6 px-4 border-t border-slate-800">
-          <p className="text-center text-slate-500 text-sm">
+        <footer className="mt-auto py-4 sm:py-6 px-3 sm:px-4 border-t border-slate-800">
+          <p className="text-center text-slate-500 text-xs sm:text-sm">
             © Cutverse™ - All Rights Reserved
           </p>
         </footer>

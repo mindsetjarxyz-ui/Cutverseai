@@ -38,6 +38,23 @@ const captionStyleOptions = [
   { value: 'promotional', label: 'Promotional' },
 ];
 
+const blogWordCountOptions = [
+  { value: '500', label: '500 words' },
+  { value: '800', label: '800 words' },
+  { value: '1000', label: '1000 words' },
+  { value: '1500', label: '1500 words' },
+  { value: 'custom', label: 'Custom' },
+];
+
+const storyWordCountOptions = [
+  { value: '300', label: '300 words' },
+  { value: '500', label: '500 words' },
+  { value: '700', label: '700 words' },
+  { value: '1000', label: '1000 words' },
+  { value: 'custom', label: 'Custom' },
+];
+
+// ==================== CONTENT WRITER ====================
 export function ContentWriter() {
   const [contentType, setContentType] = useState('blog-post');
   const [details, setDetails] = useState('');
@@ -52,27 +69,15 @@ export function ContentWriter() {
     
     const typeLabel = contentTypeOptions.find(o => o.value === contentType)?.label || contentType;
     
-    const prompt = `Write a ${typeLabel} based on these details:
+    const prompt = `Write high-quality ${typeLabel} content based on these details:
 
 ${details}
 
-Requirements:
-- Create high-quality, engaging content
-- Make the title/heading prominent
-- Use appropriate tone and style for ${typeLabel}
-- Do NOT use hash symbols, asterisks, or single quotes in the main text
-- For Instagram captions, include relevant hashtags at the end
-- Make it well-structured and professional
-
-Respond with only the content.`;
+Create engaging, well-structured ${typeLabel} content. Start with a compelling title on its own line. Make the content professional, engaging, and well-organized. Use appropriate tone and style for ${typeLabel}. For Instagram captions, include relevant hashtags at the end. Follow any language instructions in the details.`;
 
     const { error: apiError, output } = await generateText(prompt);
-    
-    if (apiError) {
-      setError(apiError);
-    } else {
-      setResult(output);
-    }
+    if (apiError) setError(apiError);
+    else setResult(output);
     setLoading(false);
   };
 
@@ -102,38 +107,43 @@ Respond with only the content.`;
   );
 }
 
+// ==================== KIDS STORY WRITER ====================
 export function KidsStoryWriter() {
   const [topic, setTopic] = useState('');
   const [ageGroup, setAgeGroup] = useState('6-8');
+  const [wordCount, setWordCount] = useState('500');
+  const [customWordCount, setCustomWordCount] = useState('');
   const [result, setResult] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
   const handleGenerate = async () => {
     if (!topic.trim()) return;
+    const finalWordCount = wordCount === 'custom' ? customWordCount : wordCount;
+    if (!finalWordCount || parseInt(finalWordCount) < 100) {
+      setError('Please enter a valid word count (minimum 100 words)');
+      return;
+    }
     setLoading(true);
     setError('');
     
-    const prompt = `Write an engaging children story for ages ${ageGroup} about: "${topic}"
+    const prompt = `Write a wonderful children story of approximately ${finalWordCount} words for ages ${ageGroup} about: "${topic}"
 
-Requirements:
-- Create a catchy, fun title
-- Use age-appropriate vocabulary and sentence length
-- Include colorful descriptions and lovable characters
-- Make it imaginative and engaging
-- Include a positive message or moral at the end
-- Do NOT use hash symbols, asterisks, or single quotes
-- Make key story moments exciting
+Start with a fun, catchy title on its own line.
 
-Respond with only the story with its title.`;
+Then write an engaging story that:
+- Uses age-appropriate vocabulary and sentence length for ${ageGroup} year olds
+- Has colorful, imaginative descriptions that children will love
+- Features lovable, relatable characters
+- Includes gentle humor and wonder
+- Builds excitement with a clear beginning, middle, and end
+- Ends with a positive message, moral, or lesson
+
+Make it magical and memorable. The kind of story a child would want to hear again and again.`;
 
     const { error: apiError, output } = await generateText(prompt);
-    
-    if (apiError) {
-      setError(apiError);
-    } else {
-      setResult(output);
-    }
+    if (apiError) setError(apiError);
+    else setResult(output);
     setLoading(false);
   };
 
@@ -148,7 +158,38 @@ Respond with only the story with its title.`;
           rows={4}
         />
         <Select label="Age Group" options={ageGroupOptions} value={ageGroup} onChange={(e) => setAgeGroup(e.target.value)} />
-        <Button onClick={handleGenerate} loading={loading} disabled={!topic.trim()}>
+        <div>
+          <label className="block text-sm font-medium text-slate-300 mb-2">Word Count</label>
+          <div className="flex flex-wrap gap-2">
+            {storyWordCountOptions.map(opt => (
+              <button
+                key={opt.value}
+                onClick={() => setWordCount(opt.value)}
+                className={`px-3 py-1.5 rounded-lg text-sm transition-colors ${
+                  wordCount === opt.value 
+                    ? 'bg-blue-600 text-white' 
+                    : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                }`}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+          {wordCount === 'custom' && (
+            <div className="mt-3">
+              <input
+                type="number"
+                min="100"
+                max="5000"
+                placeholder="Enter word count (e.g., 400, 600, 800)"
+                value={customWordCount}
+                onChange={(e) => setCustomWordCount(e.target.value)}
+                className="w-full px-4 py-2 bg-slate-700/50 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+            </div>
+          )}
+        </div>
+        <Button onClick={handleGenerate} loading={loading} disabled={!topic.trim() || (wordCount === 'custom' && !customWordCount)}>
           Generate Story
         </Button>
         {error && <p className="text-red-400 text-sm">{error}</p>}
@@ -158,41 +199,44 @@ Respond with only the story with its title.`;
   );
 }
 
+// ==================== BLOG POST WRITER ====================
 export function BlogPostWriter() {
   const [topic, setTopic] = useState('');
   const [tone, setTone] = useState('informative');
+  const [wordCount, setWordCount] = useState('800');
+  const [customWordCount, setCustomWordCount] = useState('');
   const [result, setResult] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
   const handleGenerate = async () => {
     if (!topic.trim()) return;
+    const finalWordCount = wordCount === 'custom' ? customWordCount : wordCount;
+    if (!finalWordCount || parseInt(finalWordCount) < 200) {
+      setError('Please enter a valid word count (minimum 200 words)');
+      return;
+    }
     setLoading(true);
     setError('');
     
-    const prompt = `Write an SEO-friendly blog post about: "${topic}"
+    const prompt = `Write a comprehensive, SEO-friendly blog post of approximately ${finalWordCount} words about: "${topic}"
 
 Tone: ${tone}
 
-Requirements:
-- Create a catchy headline/title
-- Write an engaging introduction with a hook
-- Structure the body with clear subheadings
-- Include practical tips, insights, or information
-- End with a strong conclusion and call-to-action
-- Use ${tone} tone throughout
-- Do NOT use hash symbols, asterisks, or single quotes
-- Make headings and key points prominent
+Start with a compelling headline/title on its own line.
 
-Respond with the complete blog post.`;
+Then structure the post with:
+- An engaging introduction with a hook that draws readers in
+- Clear section headings for the body (each heading on its own line)
+- Practical tips, insights, examples, or information under each section
+- Smooth transitions between sections
+- A strong conclusion with a call-to-action
+
+Use ${tone} tone throughout. Make it informative, engaging, and valuable to readers. Include relevant keywords naturally for SEO.`;
 
     const { error: apiError, output } = await generateText(prompt);
-    
-    if (apiError) {
-      setError(apiError);
-    } else {
-      setResult(output);
-    }
+    if (apiError) setError(apiError);
+    else setResult(output);
     setLoading(false);
   };
 
@@ -201,13 +245,44 @@ Respond with the complete blog post.`;
       <div className="space-y-4">
         <TextArea
           label="Blog Topic"
-          placeholder="Enter your blog topic. E.g., 10 Tips for Better Sleep, How to Start a Small Business, Benefits of Morning Exercise, Best Travel Destinations..."
+          placeholder="Enter your blog topic. E.g., 10 Tips for Better Sleep, How to Start a Small Business, Benefits of Morning Exercise..."
           value={topic}
           onChange={(e) => setTopic(e.target.value)}
           rows={4}
         />
         <Select label="Tone" options={blogToneOptions} value={tone} onChange={(e) => setTone(e.target.value)} />
-        <Button onClick={handleGenerate} loading={loading} disabled={!topic.trim()}>
+        <div>
+          <label className="block text-sm font-medium text-slate-300 mb-2">Word Count</label>
+          <div className="flex flex-wrap gap-2">
+            {blogWordCountOptions.map(opt => (
+              <button
+                key={opt.value}
+                onClick={() => setWordCount(opt.value)}
+                className={`px-3 py-1.5 rounded-lg text-sm transition-colors ${
+                  wordCount === opt.value 
+                    ? 'bg-blue-600 text-white' 
+                    : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                }`}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+          {wordCount === 'custom' && (
+            <div className="mt-3">
+              <input
+                type="number"
+                min="200"
+                max="10000"
+                placeholder="Enter word count (e.g., 1200, 2000, 3000)"
+                value={customWordCount}
+                onChange={(e) => setCustomWordCount(e.target.value)}
+                className="w-full px-4 py-2 bg-slate-700/50 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+            </div>
+          )}
+        </div>
+        <Button onClick={handleGenerate} loading={loading} disabled={!topic.trim() || (wordCount === 'custom' && !customWordCount)}>
           Generate Blog Post
         </Button>
         {error && <p className="text-red-400 text-sm">{error}</p>}
@@ -217,6 +292,7 @@ Respond with the complete blog post.`;
   );
 }
 
+// ==================== INSTAGRAM CAPTION ====================
 export function InstagramCaption() {
   const [description, setDescription] = useState('');
   const [style, setStyle] = useState('engaging');
@@ -231,24 +307,13 @@ export function InstagramCaption() {
     
     const prompt = `Write an ${style} Instagram caption for: "${description}"
 
-Requirements:
-- Start with an attention-grabbing first line
-- Write engaging body text that connects with the audience
-- Include a call-to-action or question
-- Add 5-10 relevant hashtags at the end
-- Keep it concise but impactful
-- Do NOT use asterisks or single quotes in the caption text
-- Make it ${style} and shareable
+Start with an attention-grabbing first line that makes people stop scrolling. Then write engaging body text that connects with the audience emotionally. Include a question or call-to-action to boost engagement. End with 8-12 relevant and trending hashtags.
 
-Respond with only the caption including hashtags.`;
+Make it ${style}, authentic, and shareable. Keep the caption concise but impactful.`;
 
     const { error: apiError, output } = await generateText(prompt);
-    
-    if (apiError) {
-      setError(apiError);
-    } else {
-      setResult(output);
-    }
+    if (apiError) setError(apiError);
+    else setResult(output);
     setLoading(false);
   };
 
@@ -257,7 +322,7 @@ Respond with only the caption including hashtags.`;
       <div className="space-y-4">
         <TextArea
           label="Post Description"
-          placeholder="Describe your post. E.g., Photo of sunset at the beach, New product launch, Fitness transformation, Travel photo from Paris, Food photography..."
+          placeholder="Describe your post. E.g., Photo of sunset at the beach, New product launch, Fitness transformation, Travel photo from Paris..."
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           rows={4}
@@ -273,6 +338,7 @@ Respond with only the caption including hashtags.`;
   );
 }
 
+// ==================== TOOL WRAPPER ====================
 export function WriterToolWrapper({ toolId }: WriterToolProps) {
   switch (toolId) {
     case 'content-writer':

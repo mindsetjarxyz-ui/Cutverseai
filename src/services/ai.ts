@@ -15,38 +15,75 @@ export function cleanText(text: string): string {
     .replace(/\*/g, '')
     .replace(/'/g, '')
     .replace(/`/g, '')
+    .replace(/—/g, ' - ')
     .trim();
 }
 
-// Format text with bold title and emphasized words
+// Format text with bold title and emphasized words - improved for real-life rendering
 export function formatOutputText(text: string): string {
+  if (!text) return '';
+  
   const cleaned = cleanText(text);
   const lines = cleaned.split('\n');
-  
-  if (lines.length > 0) {
-    // Make first non-empty line bold as title
-    const firstLineIndex = lines.findIndex(line => line.trim().length > 0);
-    if (firstLineIndex >= 0) {
-      lines[firstLineIndex] = `<strong class="text-lg font-bold text-white">${lines[firstLineIndex]}</strong>`;
+  const processedLines: string[] = [];
+  let titleRendered = false;
+
+  for (let i = 0; i < lines.length; i++) {
+    let line = lines[i].trim();
+    
+    if (!line) {
+      processedLines.push('');
+      continue;
     }
+
+    // Detect and style the first significant line as bold title
+    if (!titleRendered && line.length > 3 && line.length < 200) {
+      line = `<div class="result-title">${line}</div>`;
+      titleRendered = true;
+      processedLines.push(line);
+      continue;
+    }
+
+    // Detect section headings (lines that are short, standalone, and look like headings)
+    const isHeading = (
+      line.length < 80 &&
+      !line.endsWith(',') &&
+      (
+        line.endsWith(':') ||
+        /^(Introduction|Conclusion|Body|Opening|Closing|Dear|Subject|Date|To|From|Paragraph|Para|Section|Part|Chapter|Arguments|Counter|Rebuttal|Hook|Intro|Main Content|Call to Action|Outro|Corrected Text|Improved Text|Humanized Text|Result|Output)/i.test(line) ||
+        (line === line.replace(/[a-z]/g, '') && line.length > 2) || // ALL CAPS
+        (/^[A-Z]/.test(line) && line.split(' ').length <= 6 && !line.endsWith('.') && i > 0 && lines[i-1].trim() === '')
+      )
+    );
+
+    if (isHeading) {
+      line = `<div class="result-heading">${line}</div>`;
+    } else {
+      // Bold important keywords/phrases inline
+      const boldPatterns = [
+        /\b(Important|Key Point|Note|Conclusion|Summary|Introduction|Therefore|However|Moreover|Furthermore|In conclusion|To summarize|In summary|First|Second|Third|Finally|Firstly|Secondly|Thirdly|Lastly|Main Point|For example|For instance|On the other hand|In addition|As a result|Consequently|Meanwhile|Nevertheless|Regardless|Significantly|Notably|Essentially|Fundamentally|Critically|Respectfully|Sincerely|Regards|Faithfully|Yours truly|Thank you|Dear Sir|Dear Madam|Dear Teacher|To Whom|Subject|Reference|Opening Statement|Closing Statement|Ladies and Gentlemen|Honourable|Distinguished|Respected|Evidence|Example|Result|Moral|Lesson)\b/gi
+      ];
+
+      for (const pattern of boldPatterns) {
+        line = line.replace(pattern, '<strong class="text-blue-300 font-semibold">$1</strong>');
+      }
+    }
+
+    processedLines.push(line);
   }
+
+  // Join with proper line breaks and convert double newlines to paragraph breaks
+  let result = processedLines.join('\n');
   
-  // Bold some important phrases
-  const keywords = [
-    'Important', 'Key Point', 'Note', 'Conclusion', 'Summary', 'Introduction',
-    'Therefore', 'However', 'Moreover', 'Furthermore', 'In conclusion', 'To summarize',
-    'Dear', 'Respected', 'Subject', 'Date', 'Sincerely', 'Yours', 'Main Point',
-    'First', 'Second', 'Third', 'Finally', 'Body', 'Opening', 'Closing',
-    'Arguments', 'Counter', 'Rebuttal', 'Evidence', 'Example', 'Result',
-    'HOOK', 'INTRO', 'INTRODUCTION', 'MAIN CONTENT', 'CALL TO ACTION', 'OUTRO',
-    'Paragraph', 'Para', 'Section'
-  ];
+  // Convert paragraph breaks (double newline) to proper spacing
+  result = result.replace(/\n\n+/g, '</p><p class="mt-3">');
+  result = result.replace(/\n/g, '<br/>');
+  result = `<p>${result}</p>`;
   
-  let result = lines.join('\n');
-  keywords.forEach(keyword => {
-    const regex = new RegExp(`\\b(${keyword})\\b`, 'gi');
-    result = result.replace(regex, '<strong class="font-semibold text-blue-300">$1</strong>');
-  });
+  // Clean up empty paragraphs
+  result = result.replace(/<p class="mt-3"><\/p>/g, '');
+  result = result.replace(/<p><\/p>/g, '');
+  result = result.replace(/<p>\s*<br\/>\s*<\/p>/g, '');
   
   return result;
 }
@@ -60,9 +97,21 @@ export async function generateText(prompt: string, systemPrompt?: string): Promi
     // Build messages array
     const messages: Array<{ role: string; content: string }> = [];
     
-    if (systemPrompt) {
-      messages.push({ role: "system", content: systemPrompt });
-    }
+    const defaultSystem = `You are a professional AI writing assistant. Follow these rules strictly:
+- NEVER use hash/pound symbols (#) in your output
+- NEVER use asterisks (*) in your output  
+- NEVER use single quotes or backticks in your output
+- NEVER use markdown formatting
+- Write clean plain text only
+- Use proper paragraph breaks with blank lines between sections
+- Write section headings on their own line followed by a colon if needed
+- Keep text natural, well-structured, and easy to read
+- If the user requests a specific language, write entirely in that language`;
+
+    messages.push({ 
+      role: "system", 
+      content: systemPrompt ? `${defaultSystem}\n\n${systemPrompt}` : defaultSystem 
+    });
     
     messages.push({ role: "user", content: prompt });
     
@@ -98,7 +147,6 @@ export async function generateText(prompt: string, systemPrompt?: string): Promi
       } else if (output.response) {
         outputText = output.response;
       } else {
-        // Try to extract any text content
         try {
           outputText = JSON.stringify(result.output);
         } catch {
@@ -114,7 +162,7 @@ export async function generateText(prompt: string, systemPrompt?: string): Promi
     return { error: null, output: cleanText(outputText) };
   } catch (err: any) {
     console.error('Text generation error:', err);
-    return { error: err.message || 'Failed to generate text', output: '' };
+    return { error: err.message || 'Failed to generate text. Please try again.', output: '' };
   }
 }
 
