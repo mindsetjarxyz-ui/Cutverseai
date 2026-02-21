@@ -19,15 +19,77 @@ export function cleanText(text: string): string {
     .trim();
 }
 
-// Format text - simple clean output without styling
+// Format text with beautiful rendering - headings bold, titles larger, important words bold
 export function formatOutputText(text: string): string {
   if (!text) return '';
   
   const cleaned = cleanText(text);
+  const lines = cleaned.split('\n');
+  const processedLines: string[] = [];
+  let titleRendered = false;
+
+  for (let i = 0; i < lines.length; i++) {
+    let line = lines[i].trim();
+    
+    if (!line) {
+      processedLines.push('');
+      continue;
+    }
+
+    // Detect and style the first significant line as title (larger, bold)
+    if (!titleRendered && line.length > 3 && line.length < 200) {
+      line = `<h2 class="text-xl sm:text-2xl font-bold text-white mb-3 mt-2">${line}</h2>`;
+      titleRendered = true;
+      processedLines.push(line);
+      continue;
+    }
+
+    // Detect section headings (bold, larger)
+    const isHeading = (
+      line.length < 80 &&
+      !line.endsWith(',') &&
+      (
+        line.endsWith(':') ||
+        /^(Introduction|Conclusion|Body|Opening|Closing|Dear|Subject|Date|To|From|Paragraph|Para|Section|Part|Chapter|Arguments|Counter|Rebuttal|Hook|Intro|Main Content|Call to Action|Outro|Summary|Abstract|Overview|Background|Details|Examples|Analysis|Discussion|Results|Findings|Key Points|Important Notes|Benefits|Advantages|Disadvantages|Challenges|Solutions|Methods|Approaches|Strategies|Tips|Best Practices|Recommendations|Conclusion|Final Thoughts|Next Steps)/i.test(line) ||
+        (line === line.replace(/[a-z]/g, '') && line.length > 2) || // ALL CAPS
+        (/^[A-Z]/.test(line) && line.split(' ').length <= 6 && !line.endsWith('.') && i > 0 && lines[i-1].trim() === '')
+      )
+    );
+
+    if (isHeading) {
+      line = `<h3 class="text-lg sm:text-xl font-bold text-white mt-4 mb-2">${line}</h3>`;
+    } else {
+      // Bold important keywords/phrases inline
+      const boldPatterns = [
+        /\b(Important|Key Point|Key|Note|Conclusion|Summary|Introduction|Therefore|However|Moreover|Furthermore|In conclusion|To summarize|In summary|First|Second|Third|Finally|Firstly|Secondly|Thirdly|Lastly|Main Point|Main|For example|For instance|On the other hand|In addition|As a result|Consequently|Meanwhile|Nevertheless|Regardless|Significantly|Notably|Essentially|Fundamentally|Critically|Respectfully|Sincerely|Regards|Faithfully|Yours truly|Thank you|Dear Sir|Dear Madam|Dear Teacher|To Whom|Subject|Reference|Opening Statement|Closing Statement|Ladies and Gentlemen|Honourable|Distinguished|Respected|Evidence|Example|Result|Moral|Lesson|Moreover|Thus|Hence|Also|Additionally|Similarly|Likewise|Besides|Indeed|Certainly|Obviously|Clearly|Undoubtedly|Definitely|Absolutely|Positively|Success|Successful|Benefit|Benefits|Advantage|Advantages|Important|Importantly|Significantly|notably|Essentially|Basically)\b/gi
+      ];
+
+      for (const pattern of boldPatterns) {
+        line = line.replace(pattern, '<strong class="font-semibold text-blue-300">$1</strong>');
+      }
+    }
+
+    processedLines.push(line);
+  }
+
+  // Join with proper line breaks and convert double newlines to paragraph breaks
+  let result = processedLines.join('\n');
   
-  // Just return clean text with basic formatting
-  // Convert paragraph breaks to proper spacing
-  let result = cleaned.replace(/\n\n+/g, '\n\n');
+  // Convert paragraph breaks (double newline) to proper spacing
+  result = result.replace(/\n\n+/g, '</p><p class="mt-4">');
+  result = result.replace(/\n/g, '<br/>');
+  result = `<p class="leading-relaxed text-slate-200">${result}</p>`;
+  
+  // Clean up empty paragraphs
+  result = result.replace(/<p class="mt-4"><\/p>/g, '');
+  result = result.replace(/<p class="leading-relaxed text-slate-200"><\/p>/g, '');
+  result = result.replace(/<p>\s*<br\/>\s*<\/p>/g, '');
+  
+  // Wrap headings properly
+  result = result.replace(/<p class="leading-relaxed text-slate-200"><h2/g, '<h2');
+  result = result.replace(/<\/h2><br\/>/g, '</h2>');
+  result = result.replace(/<p class="leading-relaxed text-slate-200"><h3/g, '<h3');
+  result = result.replace(/<\/h3><br\/>/g, '</h3>');
   
   return result;
 }

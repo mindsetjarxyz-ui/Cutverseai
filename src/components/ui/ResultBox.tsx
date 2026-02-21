@@ -164,7 +164,7 @@ export function ResultBox({
     }
   }, [content]);
 
-  const formattedContent = displayedContent; // Use plain text directly, no HTML formatting
+  const formattedContent = formatOutputText(displayedContent);
 
   return (
     <div className={cn('bg-slate-800/30 border border-slate-700/50 rounded-xl overflow-hidden', className)}>
@@ -226,9 +226,8 @@ export function ResultBox({
           <div className="animate-fadeIn">
             <div 
               className="result-text text-slate-200 leading-[1.8] sm:leading-[1.85] text-sm sm:text-[15px] whitespace-pre-wrap break-words"
-            >
-              {formattedContent}
-            </div>
+              dangerouslySetInnerHTML={{ __html: formattedContent }}
+            />
           </div>
         ) : (
           <div className="flex items-center justify-center h-32 sm:h-40 text-slate-500 text-xs sm:text-sm">
