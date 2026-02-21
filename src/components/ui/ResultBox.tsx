@@ -29,39 +29,39 @@ export function ResultBox({
   const typingRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const contentRef = useRef<HTMLDivElement>(null);
 
-  // Fast typing speed calculator - no cursor, quick animation
+  // ULTRA FAST typing speed calculator - no cursor, maximum speed
   const getTypingDelay = useCallback((char: string, nextChar: string, position: number, totalLength: number): number => {
-    // Very fast base speed
-    const baseSpeed = 3;
+    // Ultra fast base speed - almost instant
+    const baseSpeed = 0.5; // Reduced from 1 to 0.5
     
-    // Speed up as we go
-    const progressFactor = Math.max(0.3, 1 - (position / totalLength) * 0.6);
+    // Speed up as we go - very aggressive
+    const progressFactor = Math.max(0.1, 1 - (position / totalLength) * 0.4);
     
-    // Brief punctuation pauses
+    // Minimal punctuation pauses
     if (char === '.') {
-      if (nextChar === '\n') return 25; // End of paragraph
-      return 15; // End of sentence
+      if (nextChar === '\n') return 8; // End of paragraph
+      return 4; // End of sentence
     }
-    if (char === ',') return 8;
-    if (char === ':') return 10;
-    if (char === ';') return 10;
-    if (char === '!') return 15;
-    if (char === '?') return 15;
+    if (char === ',') return 2;
+    if (char === ':') return 3;
+    if (char === ';') return 3;
+    if (char === '!') return 4;
+    if (char === '?') return 4;
     
-    // New line pauses
+    // New line pauses - minimal
     if (char === '\n') {
-      if (nextChar === '\n') return 20; // Paragraph break
-      return 10;
+      if (nextChar === '\n') return 5; // Paragraph break
+      return 2;
     }
     
-    // Space between words
-    if (char === ' ') return baseSpeed * progressFactor * 0.5;
+    // Space between words - very minimal
+    if (char === ' ') return baseSpeed * progressFactor * 0.2;
     
     // Slight random variation (±20%)
     const randomVariation = 0.8 + Math.random() * 0.4;
     
-    // Burst typing - type very fast chunks
-    if (Math.random() < 0.25) return 1; // Ultra fast burst
+    // Burst typing - type VERY fast chunks
+    if (Math.random() < 0.4) return 0.2; // Ultra fast burst
     
     return baseSpeed * progressFactor * randomVariation;
   }, []);
@@ -121,11 +121,10 @@ export function ResultBox({
     }
   }, [content, showTypewriter, getTypingDelay]);
 
-  // Auto-scroll during typing
+  // Don't auto-scroll during typing - let user scroll freely
   useEffect(() => {
-    if (isTyping && contentRef.current) {
-      contentRef.current.scrollTop = contentRef.current.scrollHeight;
-    }
+    // Auto-scroll disabled - user can scroll up/down freely while AI is writing
+    // Comment out the auto-scroll functionality
   }, [displayedContent, isTyping]);
 
   const handleCopy = async () => {
@@ -165,7 +164,7 @@ export function ResultBox({
     }
   }, [content]);
 
-  const formattedContent = formatOutputText(displayedContent);
+  const formattedContent = displayedContent; // Use plain text directly, no HTML formatting
 
   return (
     <div className={cn('bg-slate-800/30 border border-slate-700/50 rounded-xl overflow-hidden', className)}>
@@ -227,8 +226,9 @@ export function ResultBox({
           <div className="animate-fadeIn">
             <div 
               className="result-text text-slate-200 leading-[1.8] sm:leading-[1.85] text-sm sm:text-[15px] whitespace-pre-wrap break-words"
-              dangerouslySetInnerHTML={{ __html: formattedContent }}
-            />
+            >
+              {formattedContent}
+            </div>
           </div>
         ) : (
           <div className="flex items-center justify-center h-32 sm:h-40 text-slate-500 text-xs sm:text-sm">

@@ -19,71 +19,15 @@ export function cleanText(text: string): string {
     .trim();
 }
 
-// Format text with bold title and emphasized words - improved for real-life rendering
+// Format text - simple clean output without styling
 export function formatOutputText(text: string): string {
   if (!text) return '';
   
   const cleaned = cleanText(text);
-  const lines = cleaned.split('\n');
-  const processedLines: string[] = [];
-  let titleRendered = false;
-
-  for (let i = 0; i < lines.length; i++) {
-    let line = lines[i].trim();
-    
-    if (!line) {
-      processedLines.push('');
-      continue;
-    }
-
-    // Detect and style the first significant line as bold title
-    if (!titleRendered && line.length > 3 && line.length < 200) {
-      line = `<div class="result-title">${line}</div>`;
-      titleRendered = true;
-      processedLines.push(line);
-      continue;
-    }
-
-    // Detect section headings (lines that are short, standalone, and look like headings)
-    const isHeading = (
-      line.length < 80 &&
-      !line.endsWith(',') &&
-      (
-        line.endsWith(':') ||
-        /^(Introduction|Conclusion|Body|Opening|Closing|Dear|Subject|Date|To|From|Paragraph|Para|Section|Part|Chapter|Arguments|Counter|Rebuttal|Hook|Intro|Main Content|Call to Action|Outro|Corrected Text|Improved Text|Humanized Text|Result|Output)/i.test(line) ||
-        (line === line.replace(/[a-z]/g, '') && line.length > 2) || // ALL CAPS
-        (/^[A-Z]/.test(line) && line.split(' ').length <= 6 && !line.endsWith('.') && i > 0 && lines[i-1].trim() === '')
-      )
-    );
-
-    if (isHeading) {
-      line = `<div class="result-heading">${line}</div>`;
-    } else {
-      // Bold important keywords/phrases inline
-      const boldPatterns = [
-        /\b(Important|Key Point|Note|Conclusion|Summary|Introduction|Therefore|However|Moreover|Furthermore|In conclusion|To summarize|In summary|First|Second|Third|Finally|Firstly|Secondly|Thirdly|Lastly|Main Point|For example|For instance|On the other hand|In addition|As a result|Consequently|Meanwhile|Nevertheless|Regardless|Significantly|Notably|Essentially|Fundamentally|Critically|Respectfully|Sincerely|Regards|Faithfully|Yours truly|Thank you|Dear Sir|Dear Madam|Dear Teacher|To Whom|Subject|Reference|Opening Statement|Closing Statement|Ladies and Gentlemen|Honourable|Distinguished|Respected|Evidence|Example|Result|Moral|Lesson)\b/gi
-      ];
-
-      for (const pattern of boldPatterns) {
-        line = line.replace(pattern, '<strong class="text-blue-300 font-semibold">$1</strong>');
-      }
-    }
-
-    processedLines.push(line);
-  }
-
-  // Join with proper line breaks and convert double newlines to paragraph breaks
-  let result = processedLines.join('\n');
   
-  // Convert paragraph breaks (double newline) to proper spacing
-  result = result.replace(/\n\n+/g, '</p><p class="mt-3">');
-  result = result.replace(/\n/g, '<br/>');
-  result = `<p>${result}</p>`;
-  
-  // Clean up empty paragraphs
-  result = result.replace(/<p class="mt-3"><\/p>/g, '');
-  result = result.replace(/<p><\/p>/g, '');
-  result = result.replace(/<p>\s*<br\/>\s*<\/p>/g, '');
+  // Just return clean text with basic formatting
+  // Convert paragraph breaks to proper spacing
+  let result = cleaned.replace(/\n\n+/g, '\n\n');
   
   return result;
 }

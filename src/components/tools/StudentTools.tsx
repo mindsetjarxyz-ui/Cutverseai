@@ -312,7 +312,6 @@ export function SpeechWriter() {
 // ==================== SUMMARY GENERATOR ====================
 export function SummaryGenerator() {
   const [text, setText] = useState('');
-  const [classLevel, setClassLevel] = useState('class-10');
   const [style, setStyle] = useState('medium');
   const [result, setResult] = useState('');
   const [loading, setLoading] = useState(false);
@@ -323,10 +322,9 @@ export function SummaryGenerator() {
     setLoading(true);
     setError('');
     
-    const levelText = classLevel === 'university' ? 'University' : classLevel.replace('-', ' ').replace('class', 'Class');
     const styleGuide = style === 'very-short' ? 'very brief, 3-5 sentences maximum' : style === 'medium' ? 'moderate length, covering all main points' : 'detailed but using simple language, covering all important aspects';
     
-    const prompt = `Summarize this text for a ${levelText} student. Make it ${styleGuide}:\n\n"${text}"\n\nFor ${levelText} level, use appropriate vocabulary - simple words for lower classes, and clear technical terms for university. Start with a clear title like "Summary" then provide the summarized content. Highlight the main ideas clearly.`;
+    const prompt = `Summarize this text. Make it ${styleGuide}:\n\n"${text}"\n\nUse clear, simple language. Start with a clear title like "Summary" then provide the summarized content. Highlight the main ideas clearly.`;
 
     const { error: apiError, output } = await generateText(prompt);
     if (apiError) setError(apiError);
@@ -344,10 +342,7 @@ export function SummaryGenerator() {
           onChange={(e) => setText(e.target.value)}
           rows={8}
         />
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-          <Select label="Class Level" options={classOptions} value={classLevel} onChange={(e) => setClassLevel(e.target.value)} />
-          <Select label="Summary Style" options={summaryStyleOptions} value={style} onChange={(e) => setStyle(e.target.value)} />
-        </div>
+        <Select label="Summary Style" options={summaryStyleOptions} value={style} onChange={(e) => setStyle(e.target.value)} />
         <Button onClick={handleGenerate} loading={loading} disabled={!text.trim()} className="w-full sm:w-auto">
           Generate Summary
         </Button>
@@ -666,7 +661,7 @@ export function AIHumanizer() {
       ? 'Make it sound casual and friendly, like someone talking to a friend. Use informal language, contractions, and a warm tone.'
       : 'Keep the academic quality but make it read like a knowledgeable human student or researcher wrote it naturally.';
     
-    const prompt = `Humanize this text to make it sound like a real person wrote it, not an AI. Rewrite it completely while keeping the same meaning and information:\n\n"${text}"\n\nStyle: ${styleGuide}\n\nImportant guidelines for humanizing:\n- Vary sentence length naturally (mix short punchy sentences with longer ones)\n- Use natural transitions and connecting words that humans use\n- Add subtle imperfections that make text feel human (like starting a sentence with "And" or "But" occasionally)\n- Avoid overly formal or robotic phrasing\n- Remove any patterns that feel repetitive or formulaic\n- Make the vocabulary choices feel natural and varied\n- Keep the tone genuine and authentic\n- Maintain the original meaning and all key information\n- The result should pass AI detection tools as human-written\n\nStart with "Humanized Text" as the heading, then provide the rewritten version.`;
+    const prompt = `Humanize this text to make it sound like a real person wrote it, not an AI. Rewrite it completely while keeping the same meaning and information:\n\n"${text}"\n\nStyle: ${styleGuide}\n\nImportant guidelines for humanizing:\n- Vary sentence length naturally (mix short punchy sentences with longer ones)\n- Use natural transitions and connecting words that humans use\n- Add subtle imperfections that make text feel human (like starting a sentence with "And" or "But" occasionally)\n- Avoid overly formal or robotic phrasing\n- Remove any patterns that feel repetitive or formulaic\n- Make the vocabulary choices feel natural and varied\n- Keep the tone genuine and authentic\n- Maintain the original meaning and all key information\n- The result should pass AI detection tools as human-written\n\nProvide only the rewritten version without any headers or explanations.`;
 
     const { error: apiError, output } = await generateText(prompt);
     if (apiError) setError(apiError);
@@ -677,18 +672,25 @@ export function AIHumanizer() {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
       <div className="space-y-3 sm:space-y-4">
+        <div>
+          <label className="block text-sm font-medium text-slate-300 mb-2">Humanization Style</label>
+          <select 
+            value={style}
+            onChange={(e) => setStyle(e.target.value)}
+            className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+          >
+            <option value="natural">Natural and Conversational</option>
+            <option value="professional">Professional but Human</option>
+            <option value="casual">Casual and Friendly</option>
+            <option value="academic">Academic but Readable</option>
+          </select>
+        </div>
         <TextArea
           label="Paste Your Content"
           placeholder="Paste any AI-generated text here and the AI will rewrite it to sound more natural and human-written. This helps bypass AI detection tools and makes the text feel genuine."
           value={text}
           onChange={(e) => setText(e.target.value)}
           rows={8}
-        />
-        <Select 
-          label="Humanization Style" 
-          options={humanizeStyleOptions} 
-          value={style} 
-          onChange={(e) => setStyle(e.target.value)} 
         />
         <Button onClick={handleGenerate} loading={loading} disabled={!text.trim()} className="w-full sm:w-auto">
           Humanize Text
