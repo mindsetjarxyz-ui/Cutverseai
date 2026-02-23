@@ -5,7 +5,8 @@ import {
   PenTool, 
   Image, 
   Youtube,
-  X
+  X,
+  Zap
 } from 'lucide-react';
 import { cn } from '@/utils/cn';
 
@@ -22,6 +23,7 @@ const categories = [
   { id: 'writer', label: 'AI Writing', icon: PenTool },
   { id: 'image', label: 'AI Image', icon: Image },
   { id: 'social', label: 'Social Media', icon: Youtube },
+  { id: 'utility', label: 'Utility Tools', icon: Zap },
 ];
 
 export function Sidebar({ activeCategory, onCategoryChange, isOpen, onToggle }: SidebarProps) {

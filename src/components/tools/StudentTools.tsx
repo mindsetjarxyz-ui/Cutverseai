@@ -701,7 +701,138 @@ export function StudentToolWrapper({ toolId }: StudentToolProps) {
       return <StoryGenerator />;
     case 'ai-humanizer':
       return <AIHumanizer />;
+    case 'text-to-speech':
+      return <TextToSpeech />;
     default:
       return <div className="text-slate-400">Tool not found</div>;
   }
+}
+
+// ==================== TEXT TO SPEECH ====================
+import { Volume2, Download, Loader } from 'lucide-react';
+
+function TextToSpeech() {
+  const [text, setText] = useState('');
+  const [audioUrl, setAudioUrl] = useState<string>('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleGenerateSpeech = async () => {
+    if (!text.trim()) {
+      setError('Please enter some text to convert to speech');
+      return;
+    }
+
+    setIsLoading(true);
+    setError('');
+    setAudioUrl('');
+
+    try {
+      const Bytez = (await import('bytez.js')).default;
+      const key = '587f326079d22030bfcac35124690e14';
+      const sdk = new Bytez(key);
+      const model = sdk.model('openai/tts-1-hd');
+      const result = await model.run(text);
+
+      if (result.error) {
+        setError(`Error: ${result.error}`);
+      } else if (result.output) {
+        setAudioUrl(result.output);
+      } else {
+        setError('Failed to generate speech. Please try again.');
+      }
+    } catch (err) {
+      console.error('TTS Error:', err);
+      setError(err instanceof Error ? err.message : 'An error occurred while generating speech');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleDownload = () => {
+    if (!audioUrl) return;
+
+    const a = document.createElement('a');
+    a.href = audioUrl;
+    a.download = `speech_${Date.now()}.mp3`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  };
+
+  return (
+    <div className="max-w-4xl mx-auto">
+      <div className="bg-gradient-to-br from-slate-800/50 to-slate-900/50 border border-slate-700/50 rounded-2xl p-6 mb-6 backdrop-blur-sm">
+        <div className="mb-4">
+          <label className="block text-sm font-semibold text-white mb-2">
+            <Volume2 className="inline-block mr-2 w-4 h-4" />
+            Enter Text to Convert
+          </label>
+          <TextArea
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            placeholder="Enter the text you want to convert to speech..."
+            rows={6}
+          />
+          <div className="mt-2 text-xs text-slate-400">
+            {text.length} characters
+          </div>
+        </div>
+
+        <div className="flex gap-3">
+          <Button
+            onClick={handleGenerateSpeech}
+            disabled={isLoading || !text.trim()}
+            className="flex-1 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 disabled:from-slate-700 disabled:to-slate-700 disabled:cursor-not-allowed"
+          >
+            {isLoading ? (
+              <>
+                <Loader className="w-4 h-4 mr-2 animate-spin" />
+                Generating...
+              </>
+            ) : (
+              <>
+                <Volume2 className="w-4 h-4 mr-2" />
+                Generate Speech
+              </>
+            )}
+          </Button>
+        </div>
+      </div>
+
+      {error && (
+        <div className="mb-6 bg-red-500/10 border border-red-500/30 rounded-xl p-4 text-red-400">
+          <p className="text-sm">{error}</p>
+        </div>
+      )}
+
+      {audioUrl && (
+        <div className="bg-gradient-to-br from-slate-800/50 to-slate-900/50 border border-slate-700/50 rounded-2xl p-6 backdrop-blur-sm">
+          <h3 className="text-lg font-semibold text-white mb-4">Audio Output</h3>
+
+          <div className="mb-6">
+            <audio
+              controls
+              className="w-full bg-slate-900/50 rounded-xl focus:outline-none"
+              src={audioUrl}
+            >
+              Your browser does not support the audio element.
+            </audio>
+          </div>
+
+          <Button
+            onClick={handleDownload}
+            className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700"
+          >
+            <Download className="w-4 h-4 mr-2" />
+            Download Audio File
+          </Button>
+
+          <p className="text-xs text-slate-400 mt-4 text-center">
+            Audio generated with OpenAI TTS-1-HD voice model
+          </p>
+        </div>
+      )}
+    </div>
+  );
 }

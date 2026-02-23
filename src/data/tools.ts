@@ -19,7 +19,9 @@ import {
   Newspaper,
   Instagram,
   UserCheck,
-  LucideIcon
+  LucideIcon,
+  Volume2,
+  Zap
 } from 'lucide-react';
 
 export interface Tool {
@@ -177,6 +179,15 @@ export const tools: Tool[] = [
     description: 'Generate relevant tags for YouTube videos',
     icon: Hash,
     category: 'social'
+  },
+
+  // Utility Tools
+  {
+    id: 'text-to-speech',
+    title: 'Text to Speech',
+    description: 'Convert text to natural-sounding audio with AI voice',
+    icon: Volume2,
+    category: 'utility'
   }
 ];
 

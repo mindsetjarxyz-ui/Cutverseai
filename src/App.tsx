@@ -7,6 +7,7 @@ import { StudentToolWrapper } from '@/components/tools/StudentTools';
 import { WriterToolWrapper } from '@/components/tools/WriterTools';
 import { ImageToolWrapper } from '@/components/tools/ImageTools';
 import { SocialToolWrapper } from '@/components/tools/SocialTools';
+import { UtilityToolWrapper } from '@/components/tools/UtilityTools';
 import { Zap, Shield, Sparkles } from 'lucide-react';
 
 export function App() {
@@ -32,7 +33,8 @@ export function App() {
     student: 'Student AI Tools',
     writer: 'AI Writing Tools',
     image: 'AI Image Tools',
-    social: 'Social Media Tools'
+    social: 'Social Media Tools',
+    utility: 'Utility Tools'
   };
 
   const handleToolClick = (tool: Tool) => {
@@ -56,6 +58,8 @@ export function App() {
         return <ImageToolWrapper toolId={activeTool.id} />;
       case 'social':
         return <SocialToolWrapper toolId={activeTool.id} />;
+      case 'utility':
+        return <UtilityToolWrapper toolId={activeTool.id} />;
       default:
         return <div className="text-slate-400">Tool not found</div>;
     }
