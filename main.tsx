@@ -1,182 +1,233 @@
-import { useState, useMemo } from 'react';
-import { Sidebar } from '@/components/layout/Sidebar';
-import { Header } from '@/components/layout/Header';
-import { ToolCard } from '@/components/layout/ToolCard';
-import { tools, Tool } from '@/data/tools';
-import { StudentToolWrapper } from '@/components/tools/StudentTools';
-import { WriterToolWrapper } from '@/components/tools/WriterTools';
-import { ImageToolWrapper } from '@/components/tools/ImageTools';
-import { SocialToolWrapper } from '@/components/tools/SocialTools';
-import { Zap, Shield, Sparkles } from 'lucide-react';
+import { useState } from 'react';
+import { TextArea } from '@/components/ui/TextArea';
+import { Button } from '@/components/ui/Button';
+import { ResultBox } from '@/components/ui/ResultBox';
+import { Volume2, Download, Play, Loader } from 'lucide-react';
 
-export function App() {
-  const [activeCategory, setActiveCategory] = useState('all');
-  const [activeTool, setActiveTool] = useState<Tool | null>(null);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+interface UtilityToolProps {
+  toolId: string;
+}
 
-  const filteredTools = useMemo(() => {
-    let filtered = tools;
-    
-    // Only filter by category - NO search filtering in the grid
-    // Search results are shown ONLY in the dropdown
-    if (activeCategory !== 'all') {
-      filtered = filtered.filter(tool => tool.category === activeCategory);
+export function UtilityToolWrapper({ toolId }: UtilityToolProps) {
+  switch (toolId) {
+    case 'text-to-speech':
+      return <TextToSpeech />;
+    default:
+      return <div className="text-slate-400">Tool not found</div>;
+  }
+}
+
+function TextToSpeech() {
+  const [text, setText] = useState('');
+  const [audioUrl, setAudioUrl] = useState<string>('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleGenerateSpeech = async () => {
+    if (!text.trim()) {
+      setError('Please enter some text to convert to speech');
+      return;
     }
-    
-    return filtered;
-  }, [activeCategory]);
 
-  const categoryTitles: Record<string, string> = {
-    all: 'All AI Tools',
-    student: 'Student AI Tools',
-    writer: 'AI Writing Tools',
-    image: 'AI Image Tools',
-    social: 'Social Media Tools'
+    setIsLoading(true);
+    setError('');
+    setAudioUrl('');
+
+    try {
+      // Dynamically import bytez.js
+      const Bytez = (await import('bytez.js')).default;
+      
+      const key = '587f326079d22030bfcac35124690e14';
+      const sdk = new Bytez(key);
+      
+      // Use tts-1-hd model for high-quality speech
+      const model = sdk.model('openai/tts-1-hd');
+      
+      // Generate speech from text
+      const result = await model.run(text);
+
+      console.log('TTS Response:', result);
+
+      if (result.error) {
+        setError(`Error: ${result.error}`);
+      } else if (result.output) {
+        // result.output could be a URL string or object
+        let audioUrl = result.output;
+        
+        // If output is an object, check for url or data properties
+        if (typeof result.output === 'object' && result.output !== null) {
+          audioUrl = result.output.url || result.output.data || result.output;
+        }
+        
+        // Convert to string if needed
+        audioUrl = String(audioUrl);
+        
+        // Check if it's a base64 audio data
+        if (audioUrl.startsWith('data:audio') || audioUrl.startsWith('/9j') || audioUrl.includes('base64')) {
+          // It's already proper format or base64
+          setAudioUrl(audioUrl);
+        } else if (audioUrl.startsWith('http')) {
+          // It's a URL
+          setAudioUrl(audioUrl);
+        } else {
+          // Might be binary data, convert to blob URL
+          try {
+            const blob = new Blob([audioUrl], { type: 'audio/mpeg' });
+            const url = URL.createObjectURL(blob);
+            setAudioUrl(url);
+          } catch (e) {
+            // Try as base64
+            if (audioUrl.includes('base64')) {
+              setAudioUrl(audioUrl);
+            } else {
+              setError('Invalid audio data format received');
+            }
+          }
+        }
+      } else {
+        setError('Failed to generate speech. Please try again.');
+      }
+    } catch (err) {
+      console.error('TTS Error:', err);
+      setError(err instanceof Error ? err.message : 'An error occurred while generating speech');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleToolClick = (tool: Tool) => {
-    setActiveTool(tool);
-    setSearchQuery(''); // Clear search when selecting a tool
-  };
+  const handleDownload = () => {
+    if (!audioUrl) return;
 
-  const handleBack = () => {
-    setActiveTool(null);
-  };
-
-  const renderToolComponent = () => {
-    if (!activeTool) return null;
-
-    switch (activeTool.category) {
-      case 'student':
-        return <StudentToolWrapper toolId={activeTool.id} />;
-      case 'writer':
-        return <WriterToolWrapper toolId={activeTool.id} />;
-      case 'image':
-        return <ImageToolWrapper toolId={activeTool.id} />;
-      case 'social':
-        return <SocialToolWrapper toolId={activeTool.id} />;
-      default:
-        return <div className="text-slate-400">Tool not found</div>;
+    try {
+      const a = document.createElement('a');
+      a.href = audioUrl;
+      
+      // Determine file extension based on audio source
+      let filename = `speech_${Date.now()}.mp3`;
+      
+      if (audioUrl.includes('data:audio/wav')) {
+        filename = `speech_${Date.now()}.wav`;
+      } else if (audioUrl.includes('data:audio/ogg')) {
+        filename = `speech_${Date.now()}.ogg`;
+      } else if (audioUrl.includes('data:audio/webm')) {
+        filename = `speech_${Date.now()}.webm`;
+      }
+      
+      a.download = filename;
+      a.style.display = 'none';
+      document.body.appendChild(a);
+      a.click();
+      
+      // Cleanup
+      setTimeout(() => {
+        document.body.removeChild(a);
+        // For blob URLs, revoke them to free memory
+        if (audioUrl.startsWith('blob:')) {
+          URL.revokeObjectURL(audioUrl);
+        }
+      }, 100);
+    } catch (err) {
+      console.error('Download error:', err);
+      setError('Failed to download audio. Please try again.');
     }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
-      <Sidebar 
-        activeCategory={activeCategory}
-        onCategoryChange={(cat) => {
-          setActiveCategory(cat);
-          setActiveTool(null);
-          setSearchQuery('');
-        }}
-        isOpen={sidebarOpen}
-        onToggle={() => setSidebarOpen(!sidebarOpen)}
-      />
-      
-      <main className="lg:ml-64 min-h-screen flex flex-col">
-        <Header 
-          title={activeTool ? activeTool.title : categoryTitles[activeCategory]}
-          showBack={!!activeTool}
-          onBack={handleBack}
-          searchQuery={searchQuery}
-          onSearchChange={setSearchQuery}
-          onToolSelect={handleToolClick}
-          onMenuToggle={() => setSidebarOpen(!sidebarOpen)}
-        />
-        
-        <div className="flex-1 p-3 sm:p-4 md:p-6">
-          {activeTool ? (
-            <div className="max-w-6xl mx-auto animate-fadeIn">
-              <div className="mb-4 sm:mb-6">
-                <p className="text-slate-400 text-xs sm:text-sm">{activeTool.description}</p>
-              </div>
-              {renderToolComponent()}
-            </div>
-          ) : (
-            <>
-              {/* Hero Section - Only show on All Tools */}
-              {activeCategory === 'all' && !searchQuery && (
-                <div className="mb-8 sm:mb-10 py-12 sm:py-16 md:py-24 px-4 sm:px-6 md:px-8 bg-gradient-to-br from-slate-900 via-blue-950/50 to-slate-900 border border-blue-500/20 rounded-2xl sm:rounded-3xl relative overflow-hidden">
-                  {/* Animated background glow effects */}
-                  <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-blue-500/20 rounded-full blur-[100px] pointer-events-none animate-pulse" />
-                  <div className="absolute top-1/3 left-1/4 w-[400px] h-[400px] bg-indigo-500/20 rounded-full blur-[80px] pointer-events-none animate-pulse" style={{ animationDelay: '0.5s' }} />
-                  <div className="absolute bottom-1/3 right-1/4 w-[400px] h-[400px] bg-purple-500/20 rounded-full blur-[80px] pointer-events-none animate-pulse" style={{ animationDelay: '1s' }} />
-                  <div className="absolute top-0 left-0 right-0 bottom-0 bg-gradient-to-t from-slate-900/80 to-transparent pointer-events-none" />
-                  
-                  <div className="relative z-10 text-center">
-                    {/* Big Gradient Cutverse AI Title with glow */}
-                    <div className="relative inline-block">
-                      {/* Glow behind text */}
-                      <div className="absolute inset-0 blur-3xl bg-gradient-to-r from-blue-500/50 via-indigo-500/50 to-purple-500/50 scale-150 animate-pulse" />
-                      
-                      <h1 className="relative text-6xl sm:text-7xl md:text-8xl lg:text-9xl font-black mb-2 tracking-tight">
-                        <span className="bg-gradient-to-r from-blue-400 via-cyan-400 to-blue-500 bg-clip-text text-transparent drop-shadow-2xl animate-gradient" style={{ backgroundSize: '200% 200%' }}>
-                          Cutverse
-                        </span>
-                        <span className="bg-gradient-to-r from-indigo-400 via-purple-500 to-pink-500 bg-clip-text text-transparent drop-shadow-2xl animate-gradient ml-2 sm:ml-4" style={{ backgroundSize: '200% 200%', animationDelay: '0.5s' }}>
-                          AI
-                        </span>
-                      </h1>
-                    </div>
-                    
-                    {/* Tagline with subtle animation */}
-                    <p className="text-slate-300 text-base sm:text-lg md:text-xl max-w-2xl mx-auto mb-8 sm:mb-10 font-medium">
-                      Professional AI tools for everyone
-                    </p>
-                    
-                    {/* Feature badges */}
-                    <div className="flex flex-wrap justify-center gap-3 sm:gap-4 md:gap-6">
-                      <div className="flex items-center gap-2 px-4 py-2 bg-blue-500/10 border border-blue-500/20 rounded-full">
-                        <div className="w-8 h-8 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full flex items-center justify-center shadow-lg shadow-blue-500/30">
-                          <Zap className="w-4 h-4 text-white" />
-                        </div>
-                        <span className="text-sm sm:text-base font-semibold text-white">Lightning Fast</span>
-                      </div>
-                      <div className="flex items-center gap-2 px-4 py-2 bg-green-500/10 border border-green-500/20 rounded-full">
-                        <div className="w-8 h-8 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center shadow-lg shadow-green-500/30">
-                          <Shield className="w-4 h-4 text-white" />
-                        </div>
-                        <span className="text-sm sm:text-base font-semibold text-white">Privacy First</span>
-                      </div>
-                      <div className="flex items-center gap-2 px-4 py-2 bg-purple-500/10 border border-purple-500/20 rounded-full">
-                        <div className="w-8 h-8 bg-gradient-to-br from-purple-400 to-purple-600 rounded-full flex items-center justify-center shadow-lg shadow-purple-500/30">
-                          <Sparkles className="w-4 h-4 text-white" />
-                        </div>
-                        <span className="text-sm sm:text-base font-semibold text-white">Top Quality AI</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-              
-              {/* Tools Grid */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
-                {filteredTools.map(tool => (
-                  <ToolCard
-                    key={tool.id}
-                    {...tool}
-                    onClick={() => handleToolClick(tool)}
-                  />
-                ))}
-              </div>
-              
-              {filteredTools.length === 0 && (
-                <div className="text-center py-8 sm:py-12">
-                  <p className="text-slate-400 text-sm sm:text-base">No tools available in this category.</p>
-                </div>
-              )}
-            </>
-          )}
+    <div className="max-w-4xl mx-auto">
+      {/* Input Section */}
+      <div className="bg-gradient-to-br from-slate-800/50 to-slate-900/50 border border-slate-700/50 rounded-2xl p-6 mb-6 backdrop-blur-sm">
+        <div className="mb-4">
+          <label className="block text-sm font-semibold text-white mb-2">
+            <Volume2 className="inline-block mr-2 w-4 h-4" />
+            Enter Text to Convert
+          </label>
+          <TextArea
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            placeholder="Enter the text you want to convert to speech... (e.g., Hello, this is a test message!)"
+            rows={6}
+          />
+          <div className="mt-2 text-xs text-slate-400">
+            {text.length} characters
+          </div>
         </div>
-        
-        {/* Footer */}
-        <footer className="mt-auto py-4 sm:py-6 px-3 sm:px-4 border-t border-slate-800">
-          <p className="text-center text-slate-500 text-xs sm:text-sm">
-            © Cutverse™ - All Rights Reserved
+
+        <div className="flex gap-3">
+          <Button
+            onClick={handleGenerateSpeech}
+            disabled={isLoading || !text.trim()}
+            className="flex-1 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 disabled:from-slate-700 disabled:to-slate-700 disabled:cursor-not-allowed"
+          >
+            {isLoading ? (
+              <>
+                <Loader className="w-4 h-4 mr-2 animate-spin" />
+                Generating...
+              </>
+            ) : (
+              <>
+                <Volume2 className="w-4 h-4 mr-2" />
+                Generate Speech
+              </>
+            )}
+          </Button>
+        </div>
+      </div>
+
+      {/* Error Message */}
+      {error && (
+        <div className="mb-6 bg-red-500/10 border border-red-500/30 rounded-xl p-4 text-red-400">
+          <p className="text-sm">{error}</p>
+        </div>
+      )}
+
+      {/* Result Section */}
+      {audioUrl && (
+        <div className="bg-gradient-to-br from-slate-800/50 to-slate-900/50 border border-slate-700/50 rounded-2xl p-6 backdrop-blur-sm">
+          <h3 className="text-lg font-semibold text-white mb-4">Audio Output</h3>
+
+          {/* Audio Player */}
+          <div className="mb-6">
+            <audio
+              controls
+              controlsList="nodownload"
+              className="w-full bg-slate-900/50 rounded-xl focus:outline-none"
+              src={audioUrl}
+              onError={(e) => {
+                console.error('Audio playback error:', e);
+                setError('Error playing audio. The audio format may not be supported.');
+              }}
+            >
+              Your browser does not support the audio element.
+            </audio>
+          </div>
+
+          {/* Download Button */}
+          <Button
+            onClick={handleDownload}
+            className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700"
+          >
+            <Download className="w-4 h-4 mr-2" />
+            Download Audio File
+          </Button>
+
+          {/* Info */}
+          <p className="text-xs text-slate-400 mt-4 text-center">
+            Audio generated with OpenAI TTS-1-HD voice model
           </p>
-        </footer>
-      </main>
+        </div>
+      )}
+
+      {/* Info Box */}
+      <div className="mt-6 bg-blue-500/10 border border-blue-500/20 rounded-xl p-4">
+        <h4 className="text-sm font-semibold text-blue-400 mb-2">Features:</h4>
+        <ul className="text-xs text-slate-300 space-y-1">
+          <li>✓ High-quality HD voice synthesis</li>
+          <li>✓ Natural and expressive speech</li>
+          <li>✓ Download audio files in MP3 format</li>
+          <li>✓ Listen instantly in your browser</li>
+          <li>✓ Powered by OpenAI TTS-1-HD</li>
+        </ul>
+      </div>
     </div>
   );
 }
