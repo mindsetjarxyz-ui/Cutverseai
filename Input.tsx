@@ -20,7 +20,7 @@ import {
   Instagram,
   UserCheck,
   LucideIcon,
-  Volume2,
+  Music,
   Zap
 } from 'lucide-react';
 
@@ -183,10 +183,10 @@ export const tools: Tool[] = [
 
   // Utility Tools
   {
-    id: 'text-to-speech',
-    title: 'Text to Speech',
-    description: 'Convert text to natural-sounding audio with AI voice',
-    icon: Volume2,
+    id: 'text-to-music',
+    title: 'Text to Music',
+    description: 'Create AI-generated music from text descriptions',
+    icon: Music,
     category: 'utility'
   }
 ];

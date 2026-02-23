@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { TextArea } from '@/components/ui/TextArea';
 import { Button } from '@/components/ui/Button';
 import { ResultBox } from '@/components/ui/ResultBox';
-import { Volume2, Download, Play, Loader } from 'lucide-react';
+import { Music, Download, Loader } from 'lucide-react';
 
 interface UtilityToolProps {
   toolId: string;
@@ -10,107 +10,95 @@ interface UtilityToolProps {
 
 export function UtilityToolWrapper({ toolId }: UtilityToolProps) {
   switch (toolId) {
-    case 'text-to-speech':
-      return <TextToSpeech />;
+    case 'text-to-music':
+      return <TextToMusic />;
     default:
       return <div className="text-slate-400">Tool not found</div>;
   }
 }
 
-function TextToSpeech() {
-  const [text, setText] = useState('');
-  const [audioUrl, setAudioUrl] = useState<string>('');
+function TextToMusic() {
+  const [prompt, setPrompt] = useState('');
+  const [musicUrl, setMusicUrl] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const handleGenerateSpeech = async () => {
-    if (!text.trim()) {
-      setError('Please enter some text to convert to speech');
+  const handleGenerateMusic = async () => {
+    if (!prompt.trim()) {
+      setError('Please enter a music description');
       return;
     }
 
     setIsLoading(true);
     setError('');
-    setAudioUrl('');
+    setMusicUrl('');
 
     try {
-      // Dynamically import bytez.js
       const Bytez = (await import('bytez.js')).default;
       
       const key = '587f326079d22030bfcac35124690e14';
       const sdk = new Bytez(key);
       
-      // Use tts-1-hd model for high-quality speech
-      const model = sdk.model('openai/tts-1-hd');
+      const model = sdk.model('facebook/musicgen-melody');
       
-      // Generate speech from text
-      const result = await model.run(text);
+      const result = await model.run(prompt);
 
-      console.log('TTS Response:', result);
+      console.log('Music Generation Response:', result);
 
       if (result.error) {
         setError(`Error: ${result.error}`);
       } else if (result.output) {
-        // result.output could be a URL string or object
         let audioUrl = result.output;
         
-        // If output is an object, check for url or data properties
         if (typeof result.output === 'object' && result.output !== null) {
           audioUrl = result.output.url || result.output.data || result.output;
         }
         
-        // Convert to string if needed
         audioUrl = String(audioUrl);
         
-        // Check if it's a base64 audio data
-        if (audioUrl.startsWith('data:audio') || audioUrl.startsWith('/9j') || audioUrl.includes('base64')) {
-          // It's already proper format or base64
-          setAudioUrl(audioUrl);
+        if (audioUrl.startsWith('data:audio') || audioUrl.includes('base64')) {
+          setMusicUrl(audioUrl);
         } else if (audioUrl.startsWith('http')) {
-          // It's a URL
-          setAudioUrl(audioUrl);
+          setMusicUrl(audioUrl);
         } else {
-          // Might be binary data, convert to blob URL
           try {
             const blob = new Blob([audioUrl], { type: 'audio/mpeg' });
             const url = URL.createObjectURL(blob);
-            setAudioUrl(url);
+            setMusicUrl(url);
           } catch (e) {
-            // Try as base64
             if (audioUrl.includes('base64')) {
-              setAudioUrl(audioUrl);
+              setMusicUrl(audioUrl);
             } else {
               setError('Invalid audio data format received');
             }
           }
         }
       } else {
-        setError('Failed to generate speech. Please try again.');
+        setError('Failed to generate music. Please try again.');
       }
     } catch (err) {
-      console.error('TTS Error:', err);
-      setError(err instanceof Error ? err.message : 'An error occurred while generating speech');
+      console.error('Music Generation Error:', err);
+      setError(err instanceof Error ? err.message : 'An error occurred while generating music');
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleDownload = () => {
-    if (!audioUrl) return;
+    if (!musicUrl) return;
 
     try {
       const a = document.createElement('a');
-      a.href = audioUrl;
+      a.href = musicUrl;
       
-      // Determine file extension based on audio source
-      let filename = `speech_${Date.now()}.mp3`;
+      let filename = `music_${Date.now()}.mp3`;
       
-      if (audioUrl.includes('data:audio/wav')) {
-        filename = `speech_${Date.now()}.wav`;
-      } else if (audioUrl.includes('data:audio/ogg')) {
-        filename = `speech_${Date.now()}.ogg`;
-      } else if (audioUrl.includes('data:audio/webm')) {
-        filename = `speech_${Date.now()}.webm`;
+      if (musicUrl.includes('data:audio/wav')) {
+        filename = `music_${Date.now()}.wav`;
+      } else if (musicUrl.includes('data:audio/ogg')) {
+        filename = `music_${Date.now()}.ogg`;
+      } else if (musicUrl.includes('data:audio/webm')) {
+        filename = `music_${Date.now()}.webm`;
       }
       
       a.download = filename;
@@ -118,114 +106,100 @@ function TextToSpeech() {
       document.body.appendChild(a);
       a.click();
       
-      // Cleanup
       setTimeout(() => {
         document.body.removeChild(a);
-        // For blob URLs, revoke them to free memory
-        if (audioUrl.startsWith('blob:')) {
-          URL.revokeObjectURL(audioUrl);
+        if (musicUrl.startsWith('blob:')) {
+          URL.revokeObjectURL(musicUrl);
         }
       }, 100);
     } catch (err) {
       console.error('Download error:', err);
-      setError('Failed to download audio. Please try again.');
+      setError('Failed to download music. Please try again.');
     }
   };
 
   return (
     <div className="max-w-4xl mx-auto">
-      {/* Input Section */}
       <div className="bg-gradient-to-br from-slate-800/50 to-slate-900/50 border border-slate-700/50 rounded-2xl p-6 mb-6 backdrop-blur-sm">
         <div className="mb-4">
           <label className="block text-sm font-semibold text-white mb-2">
-            <Volume2 className="inline-block mr-2 w-4 h-4" />
-            Enter Text to Convert
+            <Music className="inline-block mr-2 w-4 h-4" />
+            Describe Your Music
           </label>
           <TextArea
-            value={text}
-            onChange={(e) => setText(e.target.value)}
-            placeholder="Enter the text you want to convert to speech... (e.g., Hello, this is a test message!)"
+            value={prompt}
+            onChange={(e) => setPrompt(e.target.value)}
+            placeholder="Describe the music you want to generate... (e.g., 'Moody jazz music with saxophones', 'Upbeat electronic dance music', 'Classical piano composition')"
             rows={6}
           />
           <div className="mt-2 text-xs text-slate-400">
-            {text.length} characters
+            {prompt.length} characters
           </div>
         </div>
 
         <div className="flex gap-3">
           <Button
-            onClick={handleGenerateSpeech}
-            disabled={isLoading || !text.trim()}
-            className="flex-1 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 disabled:from-slate-700 disabled:to-slate-700 disabled:cursor-not-allowed"
+            onClick={handleGenerateMusic}
+            disabled={isLoading || !prompt.trim()}
+            className="flex-1 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 disabled:from-slate-700 disabled:to-slate-700 disabled:cursor-not-allowed"
           >
             {isLoading ? (
               <>
                 <Loader className="w-4 h-4 mr-2 animate-spin" />
-                Generating...
+                Generating Music...
               </>
             ) : (
               <>
-                <Volume2 className="w-4 h-4 mr-2" />
-                Generate Speech
+                <Music className="w-4 h-4 mr-2" />
+                Generate Music
               </>
             )}
           </Button>
         </div>
       </div>
 
-      {/* Error Message */}
       {error && (
         <div className="mb-6 bg-red-500/10 border border-red-500/30 rounded-xl p-4 text-red-400">
           <p className="text-sm">{error}</p>
         </div>
       )}
 
-      {/* Result Section */}
-      {audioUrl && (
+      {musicUrl && (
         <div className="bg-gradient-to-br from-slate-800/50 to-slate-900/50 border border-slate-700/50 rounded-2xl p-6 backdrop-blur-sm">
-          <h3 className="text-lg font-semibold text-white mb-4">Audio Output</h3>
+          <h3 className="text-lg font-semibold text-white mb-4">Music Output</h3>
 
-          {/* Audio Player */}
           <div className="mb-6">
             <audio
               controls
               controlsList="nodownload"
               className="w-full bg-slate-900/50 rounded-xl focus:outline-none"
-              src={audioUrl}
+              src={musicUrl}
               onError={(e) => {
                 console.error('Audio playback error:', e);
-                setError('Error playing audio. The audio format may not be supported.');
+                setError('Error playing music. The audio format may not be supported.');
               }}
             >
               Your browser does not support the audio element.
             </audio>
           </div>
 
-          {/* Download Button */}
           <Button
             onClick={handleDownload}
             className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700"
           >
             <Download className="w-4 h-4 mr-2" />
-            Download Audio File
+            Download Music
           </Button>
-
-          {/* Info */}
-          <p className="text-xs text-slate-400 mt-4 text-center">
-            Audio generated with OpenAI TTS-1-HD voice model
-          </p>
         </div>
       )}
 
-      {/* Info Box */}
-      <div className="mt-6 bg-blue-500/10 border border-blue-500/20 rounded-xl p-4">
-        <h4 className="text-sm font-semibold text-blue-400 mb-2">Features:</h4>
+      <div className="mt-6 bg-purple-500/10 border border-purple-500/20 rounded-xl p-4">
+        <h4 className="text-sm font-semibold text-purple-400 mb-2">Music Generation Tips:</h4>
         <ul className="text-xs text-slate-300 space-y-1">
-          <li>✓ High-quality HD voice synthesis</li>
-          <li>✓ Natural and expressive speech</li>
-          <li>✓ Download audio files in MP3 format</li>
-          <li>✓ Listen instantly in your browser</li>
-          <li>✓ Powered by OpenAI TTS-1-HD</li>
+          <li>✓ Describe the genre, mood, and instruments</li>
+          <li>✓ Be specific about tempo and style</li>
+          <li>✓ Longer descriptions often yield better results</li>
+          <li>✓ Try phrases like "upbeat", "melancholic", "energetic"</li>
         </ul>
       </div>
     </div>
